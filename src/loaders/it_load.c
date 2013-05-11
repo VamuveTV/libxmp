@@ -254,7 +254,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
     struct it_envelope env;
     uint8 b, mask[L_CHANNELS];
     int max_ch, flag;
-    int inst_map[120], inst_rmap[XMP_MAX_KEYS];
+    int inst_map[XMP_MAX_KEYS], inst_rmap[XMP_MAX_KEYS];
     char tracker_name[40];
     uint32 *pp_ins;		/* Pointers to instruments */
     uint32 *pp_smp;		/* Pointers to samples */
