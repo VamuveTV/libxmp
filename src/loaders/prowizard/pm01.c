@@ -49,22 +49,22 @@ void Depack_PM01 (FILE * in, FILE * out)
 		for (j = 0; j < 22; j++)	/*sample name */
 			fwrite (&c1, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* size */
+		xmp_fread (&c2, 1, 1, in);
 		ssize += (((c1 << 8) + c2) * 2);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* finetune */
+		xmp_fread (&c1, 1, 1, in);	/* finetune */
 		fin[i] = c1;
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* volume */
+		xmp_fread (&c1, 1, 1, in);	/* volume */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop start */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop start */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop size */
+		xmp_fread (&c2, 1, 1, in);
 		if ((c1 == 0x00) && (c2 == 0x00))
 			c2 = 0x01;
 		fwrite (&c1, 1, 1, out);
@@ -73,8 +73,8 @@ void Depack_PM01 (FILE * in, FILE * out)
 	/*printf ( "Whole sample size : %ld\n" , ssize ); */
 
 	/* pattern table lenght */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
 	pat_pos = ((c1 << 8) + c2) / 4;
 	fwrite (&pat_pos, 1, 1, out);
 	/*printf ( "Size of pattern list : %d\n" , pat_pos ); */
@@ -85,10 +85,10 @@ void Depack_PM01 (FILE * in, FILE * out)
 
 	/* read pattern address list */
 	for (i = 0; i < 128; i++) {
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
-		fread (&c3, 1, 1, in);
-		fread (&c4, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
+		xmp_fread (&c3, 1, 1, in);
+		xmp_fread (&c4, 1, 1, in);
 		Pattern_Address[i] =
 			(c1 << 24) + (c2 << 16) +
 			(c3 << 8) + c4;
@@ -115,10 +115,10 @@ void Depack_PM01 (FILE * in, FILE * out)
 	fwrite (&c2, 1, 1, out);
 
 	/* get pattern data size */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	j = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	/*printf ( "Size of the pattern data : %ld\n" , j ); */
 
@@ -126,7 +126,7 @@ void Depack_PM01 (FILE * in, FILE * out)
 	tmp = (uint8 *) malloc (j);
 	PatternData = (uint8 *) malloc (j);
 	memset(tmp, 0, j);
-	fread (tmp, j, 1, in);
+	xmp_fread (tmp, j, 1, in);
 	for (k = 0; k < j; k++) {
 		if (k % 4 == 3) {
 			PatternData[k] =
@@ -174,7 +174,7 @@ void Depack_PM01 (FILE * in, FILE * out)
 
 	/* sample data */
 	tmp = (uint8 *) malloc (ssize);
-	fread (tmp, ssize, 1, in);
+	xmp_fread (tmp, ssize, 1, in);
 	fwrite (tmp, ssize, 1, out);
 	free (tmp);
 

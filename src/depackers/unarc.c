@@ -52,7 +52,7 @@ struct archived_file_header_tag {
  * returns zero if we couldn't get a header.
  * NB: a header with method zero marks EOF.
  */
-static int read_file_header(FILE * in, struct archived_file_header_tag *hdrp)
+static int read_file_header(xmp_file in, struct archived_file_header_tag *hdrp)
 {
 	unsigned char buf[4 + 2 + 2 + 2 + 4];	/* used to read size1/date/time/crc/size2 */
 	int bufsiz = sizeof(buf);
@@ -60,10 +60,10 @@ static int read_file_header(FILE * in, struct archived_file_header_tag *hdrp)
 	int c;
 
 	hdrp->method = 0xff;
-	if (fgetc(in) != 0x1a)
+	if (xmp_fgetc(in) != 0x1a)
 		return (0);
 
-	if ((c = fgetc(in)) == EOF)
+	if ((c = xmp_fgetc(in)) == EOF)
 		return (0);
 
 /* allow for the spark archive variant's alternate method encoding */
@@ -78,8 +78,8 @@ static int read_file_header(FILE * in, struct archived_file_header_tag *hdrp)
 	if (hdrp->method == 1)
 		bufsiz -= 4;	/* no `orig_size' field */
 
-	if (fread(hdrp->name, 1, sizeof(hdrp->name), in) != sizeof(hdrp->name)
-	    || fread(buf, 1, bufsiz, in) != bufsiz)
+	if (xmp_fread(hdrp->name, 1, sizeof(hdrp->name), in) != sizeof(hdrp->name)
+	    || xmp_fread(buf, 1, bufsiz, in) != bufsiz)
 		return (0);
 
 /* extract the bits from buf */
@@ -107,7 +107,7 @@ static int read_file_header(FILE * in, struct archived_file_header_tag *hdrp)
 
 /* lose the possible extra bytes in spark archives */
 	if (method_high) {
-		if (fread(buf, 1, 12, in) != 12)
+		if (xmp_fread(buf, 1, 12, in) != 12)
 			return (0);
 
 		/* has a weird recursive-.arc file scheme for subdirs,
@@ -139,16 +139,16 @@ static int read_file_header(FILE * in, struct archived_file_header_tag *hdrp)
  * So I thought it was better (and less confusing) to effectively stick
  * with the not-an-archive error for those. :-)
  */
-static int skip_sfx_header(FILE * in)
+static int skip_sfx_header(xmp_file in)
 {
 	int c, f, got = 0;
 
 	for (f = 0; f < 4; f++) {
-		if ((c = fgetc(in)) == EOF)
+		if ((c = xmp_fgetc(in)) == EOF)
 			return (0);
 		if (c == 0x1a) {
 			got = 1;
-			ungetc(c, in);
+			xmp_fungetc(c, in);
 			break;
 		}
 	}
@@ -161,7 +161,7 @@ static int skip_sfx_header(FILE * in)
  * the memory allocated.
  * Returns NULL for file I/O error only; OOM is fatal (doesn't return).
  */
-static unsigned char *read_file_data(FILE * in,
+static unsigned char *read_file_data(xmp_file in,
 				     struct archived_file_header_tag *hdrp)
 {
 	unsigned char *data;
@@ -170,7 +170,7 @@ static unsigned char *read_file_data(FILE * in,
 	if ((data = malloc(siz)) == NULL)
 		fprintf(stderr, "nomarch: out of memory!\n"), exit(1);
 
-	if (fread(data, 1, siz, in) != siz) {
+	if (xmp_fread(data, 1, siz, in) != siz) {
 		free(data);
 		data = NULL;
 	}
@@ -179,19 +179,19 @@ static unsigned char *read_file_data(FILE * in,
 }
 
 /* variant which just skips past the data */
-static int skip_file_data(FILE *in,struct archived_file_header_tag *hdrp)
+static int skip_file_data(xmp_file in,struct archived_file_header_tag *hdrp)
 {
 	int siz = hdrp->compressed_size;
 	int f;
 
 	for(f = 0; f < siz; f++)
-		if (fgetc(in) == EOF)
+		if (xmp_fgetc(in) == EOF)
 			return 0;
 
 	return 1;
 }
 
-static int arc_extract(FILE * in, FILE * out)
+static int arc_extract(xmp_file in, xmp_file out)
 {
 	struct archived_file_header_tag hdr;
 	/* int done = 0; */
@@ -309,7 +309,7 @@ static int arc_extract(FILE * in, FILE * out)
 		while ((ptr = strchr(hdr.name, '/')) != NULL)
 			*ptr = '_';
 
-		if (fwrite(orig_data, 1, hdr.orig_size, out) != hdr.orig_size) {
+		if (xmp_fwrite(orig_data, 1, hdr.orig_size, out) != hdr.orig_size) {
 			fprintf(stderr, "error, %s\n", strerror(errno));
 			exitval = 1;
 		}
@@ -332,7 +332,7 @@ static int arc_extract(FILE * in, FILE * out)
 	return exitval;
 }
 
-int decrunch_arc(FILE * f, FILE * fo)
+int decrunch_arc(xmp_file f, xmp_file fo)
 {
 	int ret;
 

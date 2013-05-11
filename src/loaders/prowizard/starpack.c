@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_starpack(FILE *in, FILE *out)
+static int depack_starpack(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4, c5;
 	uint8 pnum[128];
@@ -46,7 +46,7 @@ static int depack_starpack(FILE *in, FILE *out)
 
 	pat_pos = read16b(in);			/* size of pattern table */
 
-	fseek(in, 2, SEEK_CUR);			/* bypass $0000 unknown bytes */
+	xmp_fseek(in, 2, SEEK_CUR);			/* bypass $0000 unknown bytes */
 
 	for (i = 0; i < 128; i++)
 		paddr[i] = read32b(in);
@@ -136,11 +136,11 @@ static int depack_starpack(FILE *in, FILE *out)
 	}
 
 	write8(out, 0x7f);			/* write noisetracker byte */
-	fwrite(pnum, 128, 1, out);		/* write pattern list */
+	xmp_fwrite(pnum, 128, 1, out);		/* write pattern list */
 	write32b(out, PW_MOD_MAGIC);		/* M.K. */
 
 	/* read sample data address */
-	fseek(in, 0x310, SEEK_SET);
+	xmp_fseek(in, 0x310, SEEK_SET);
 	smp_addr = read32b(in) + 0x314;
 
 	/* pattern data */
@@ -166,13 +166,13 @@ static int depack_starpack(FILE *in, FILE *out)
 				buffer[ofs + 2] |= (c5 << 4) & 0xf0;
 			}
 		}
-		fwrite(buffer, 1024, 1, out);
+		xmp_fwrite(buffer, 1024, 1, out);
 		/*printf ( "+" ); */
 	}
 	/*printf ( "\n" ); */
 
 	/* sample data */
-	fseek(in, smp_addr, 0);
+	xmp_fseek(in, smp_addr, 0);
 	pw_move_data(out, in, ssize);
 
 	return 0;

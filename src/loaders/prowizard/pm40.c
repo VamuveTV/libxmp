@@ -70,21 +70,21 @@ void Depack_PM40 (FILE * in, FILE * out)
 		for (j = 0; j < 22; j++)	/*sample name */
 			fwrite (&c1, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* size */
+		xmp_fread (&c2, 1, 1, in);
 		ssize += (((c1 << 8) + c2) * 2);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* finetune */
+		xmp_fread (&c1, 1, 1, in);	/* finetune */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* volume */
+		xmp_fread (&c1, 1, 1, in);	/* volume */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop start */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop start */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop size */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 	}
@@ -92,7 +92,7 @@ void Depack_PM40 (FILE * in, FILE * out)
 
 	/* read and write the size of the pattern list */
 	fseek (in, 7, 0);	/* SEEK_SET */
-	fread (&PatPos, 1, 1, in);
+	xmp_fread (&PatPos, 1, 1, in);
 	fwrite (&PatPos, 1, 1, out);
 
 	/* NoiseTracker restart byte */
@@ -103,8 +103,8 @@ void Depack_PM40 (FILE * in, FILE * out)
 	/* pattern addresses */
 	fseek (in, 8, 0);	/* SEEK_SET */
 	for (i = 0; i < 128; i++) {
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		paddr[i] = (c1 << 8) + c2;
 	}
 
@@ -193,10 +193,10 @@ void Depack_PM40 (FILE * in, FILE * out)
 	   pattern data sizes ! :( */
 	/* so, first, we get the pattern data size .. */
 	fseek (in, ADDRESS_REF_TABLE, 0);	/* SEEK_SET */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	j = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	psize = (8 + j) - PATTERN_DATA;
 /*  printf ( "Pattern data size : %ld\n" , psize );*/
@@ -205,8 +205,8 @@ void Depack_PM40 (FILE * in, FILE * out)
 	fseek (in, PATTERN_DATA, 0);	/* SEEK_SET */
 	/* now, reading all pattern data to get the max value of note */
 	for (j = 0; j < psize; j += 2) {
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		if (((c1 << 8) + c2) > refmax)
 			refmax = (c1 << 8) + c2;
 	}
@@ -216,10 +216,10 @@ void Depack_PM40 (FILE * in, FILE * out)
 */
 	/* read "reference Table" */
 	fseek (in, ADDRESS_REF_TABLE, 0);	/* SEEK_SET */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	j = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	fseek (in, 8 + j, 0);	/* SEEK_SET */
 /*  printf ( "address of 'reference table' : %ld\n" , ftell (in ) );*/
@@ -227,7 +227,7 @@ void Depack_PM40 (FILE * in, FILE * out)
 	i = refmax * 4;	/* coz each block is 4 bytes long */
 	reftab = (uint8 *) malloc (i);
 	memset(reftab, 0, i);
-	fread (&reftab[4], i, 1, in);
+	xmp_fread (&reftab[4], i, 1, in);
 
 	/* go back to pattern data starting address */
 	fseek (in, PATTERN_DATA, 0);	/* SEEK_SET */
@@ -239,9 +239,9 @@ void Depack_PM40 (FILE * in, FILE * out)
 		for (i = 0; i < 64; i++) {
 			/* VOICE #1 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			note = reftab[((c1 << 8) + c2) * 4 + 1];
@@ -262,9 +262,9 @@ void Depack_PM40 (FILE * in, FILE * out)
 
 			/* VOICE #2 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			note = reftab[((c1 << 8) + c2) * 4 + 1];
@@ -285,9 +285,9 @@ void Depack_PM40 (FILE * in, FILE * out)
 
 			/* VOICE #3 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			note = reftab[((c1 << 8) + c2) * 4 + 1];
@@ -308,9 +308,9 @@ void Depack_PM40 (FILE * in, FILE * out)
 
 			/* VOICE #4 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			note = reftab[((c1 << 8) + c2) * 4 + 1];
@@ -344,10 +344,10 @@ void Depack_PM40 (FILE * in, FILE * out)
 	/* get address of sample data .. and go there */
 	/*printf ( "Saving sample datas ... " ); */
 	fseek (in, ADDRESS_SAMPLE_DATA, 0);	/* SEEK_SET */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	SDAV = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	fseek (in, 4 + SDAV, 0);	/* SEEK_SET */
 
@@ -356,7 +356,7 @@ void Depack_PM40 (FILE * in, FILE * out)
 /*  printf ( "out: where before saving sample data : %ld\n" , ftell ( out ) );*/
 /*  printf ( "Whole sample size : %ld\n" , ssize );*/
 	sdata = (uint8 *) malloc (ssize);
-	fread (sdata, ssize, 1, in);
+	xmp_fread (sdata, ssize, 1, in);
 	fwrite (sdata, ssize, 1, out);
 	free (sdata);
 	/*printf ( " ok\n" ); */

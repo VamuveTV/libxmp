@@ -9,14 +9,14 @@
 TEST(test_sample_load_skip)
 {
 	struct xmp_sample s;
-	FILE *f;
+	xmp_file f;
 	short buffer[202];
 	int i;
 	struct module_data m;
 
 	memset(&m, 0, sizeof(struct module_data));
 
-	f = fopen("data/sample-16bit.raw", "rb");
+	f = xmp_fopen("data/sample-16bit.raw", "rb");
 	fail_unless(f != NULL, "can't open sample file");
 
 	/* read little-endian sample to native-endian buffer */
@@ -29,7 +29,7 @@ TEST(test_sample_load_skip)
 
 	/* load sample from file */
 	SET(101, 0, 102, XMP_SAMPLE_16BIT);
-	fseek(f, 0, SEEK_SET);
+	xmp_fseek(f, 0, SEEK_SET);
 	load_sample(&m, f, 0, &s, NULL);
 	fail_unless(s.data != NULL, "didn't allocate sample data");
 	fail_unless(s.lpe == 101, "didn't fix invalid loop end");
@@ -38,12 +38,12 @@ TEST(test_sample_load_skip)
 
 	/* disable sample load */
 	SET(101, 0, 102, XMP_SAMPLE_16BIT);
-	fseek(f, 0, SEEK_SET);
+	xmp_fseek(f, 0, SEEK_SET);
 	m.smpctl |= XMP_SMPCTL_SKIP;
 	load_sample(&m, f, 0, &s, NULL);
 	fail_unless(s.data == NULL, "didn't skip sample load");
 	free_sample(&s);
 
-	fclose(f);
+	xmp_fclose(f);
 }
 END_TEST

@@ -70,22 +70,22 @@ void Depack_PM20 (FILE * in, FILE * out)
 		for (j = 0; j < 22; j++)	/*sample name */
 			fwrite (&c1, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* size */
+		xmp_fread (&c2, 1, 1, in);
 		ssize += (((c1 << 8) + c2) * 2);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* finetune */
+		xmp_fread (&c1, 1, 1, in);	/* finetune */
 		c1 /= 2;
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* volume */
+		xmp_fread (&c1, 1, 1, in);	/* volume */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop start */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop start */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop size */
+		xmp_fread (&c2, 1, 1, in);
 		if ((c1 == 0x00) && (c2 == 0x00))
 			c2 = 0x01;
 		fwrite (&c1, 1, 1, out);
@@ -94,13 +94,13 @@ void Depack_PM20 (FILE * in, FILE * out)
 
 	/* read REAL number of pattern */
 	fseek (in, AFTER_REPLAY_CODE + 1, 0);	/* SEEK_SET */
-	fread (&NOP, 1, 1, in);
+	xmp_fread (&NOP, 1, 1, in);
 
 	/*printf ( "REAL Number of patterns : %d\n" , NOP ); */
 
 	/* read "used" size of pattern table */
 	fseek (in, 1, 1);	/* SEEK_CUR */
-	fread (&c1, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
 	c4 = c1 / 2;
 	/*printf ( "Number of pattern in pattern list : %d\n" , c4 ); */
 
@@ -112,8 +112,8 @@ void Depack_PM20 (FILE * in, FILE * out)
 	fwrite (&c1, 1, 1, out);
 
 	for (i = 0; i < 128; i++) {
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		paddr[i] = (c1 << 8) + c2;
 	}
 
@@ -200,10 +200,10 @@ void Depack_PM20 (FILE * in, FILE * out)
 	   pattern data sizes ! :( */
 	/* so, first, we get the pattern data size .. */
 	fseek (in, ADDRESS_REF_TABLE, 0);	/* SEEK_SET */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	j = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	psize = (AFTER_REPLAY_CODE + j) - PATTERN_DATA;
 	/*printf ( "Pattern data size : %ld\n" , psize ); */
@@ -212,8 +212,8 @@ void Depack_PM20 (FILE * in, FILE * out)
 	fseek (in, 5226, 0);	/* SEEK_SET */
 	/* now, reading all pattern data to get the max value of note */
 	for (j = 0; j < psize; j += 2) {
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		if (((c1 << 8) + c2) > refmax)
 			refmax = (c1 << 8) + c2;
 	}
@@ -223,17 +223,17 @@ void Depack_PM20 (FILE * in, FILE * out)
 */
 	/* read "reference Table" */
 	fseek (in, ADDRESS_REF_TABLE, 0);	/* SEEK_SET */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	j = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	fseek (in, AFTER_REPLAY_CODE + j, 0);	/* SEEK_SET */
 	/*printf ( "address of 'reference table' : %ld\n" , ftell (in ) ); */
 	refmax += 1;		/* coz 1st value is 0 ! */
 	i = refmax * 4;	/* coz each block is 4 bytes long */
 	reftab = (uint8 *) malloc (i);
-	fread (reftab, i, 1, in);
+	xmp_fread (reftab, i, 1, in);
 
 	/* go back to pattern data starting address */
 	fseek (in, PATTERN_DATA, 0);	/* SEEK_SET */
@@ -245,9 +245,9 @@ void Depack_PM20 (FILE * in, FILE * out)
 		for (i = 0; i < 64; i++) {
 			/* VOICE #1 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			ins = ins >> 2;
@@ -269,9 +269,9 @@ void Depack_PM20 (FILE * in, FILE * out)
 
 			/* VOICE #2 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			ins = ins >> 2;
@@ -293,9 +293,9 @@ void Depack_PM20 (FILE * in, FILE * out)
 
 			/* VOICE #3 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			ins = ins >> 2;
@@ -318,9 +318,9 @@ void Depack_PM20 (FILE * in, FILE * out)
 
 			/* VOICE #4 */
 
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			k += 1;
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			k += 1;
 			ins = reftab[((c1 << 8) + c2) * 4];
 			ins = ins >> 2;
@@ -352,10 +352,10 @@ void Depack_PM20 (FILE * in, FILE * out)
 
 	/* get address of sample data .. and go there */
 	fseek (in, ADDRESS_SAMPLE_DATA, 0);	/* SEEK_SET */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	SDAV = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 	fseek (in, AFTER_REPLAY_CODE + SDAV, 0);	/* SEEK_SET */
 
@@ -364,7 +364,7 @@ void Depack_PM20 (FILE * in, FILE * out)
 	/*printf ( "out: where before saving sample data : %ld\n" , ftell ( out ) ); */
 	/*printf ( "Total sample size : %ld\n" , ssize ); */
 	sdata = (uint8 *) malloc (ssize);
-	fread (sdata, ssize, 1, in);
+	xmp_fread (sdata, ssize, 1, in);
 	fwrite (sdata, ssize, 1, out);
 	free (sdata);
 

@@ -33,7 +33,7 @@ void Depack_PM (FILE * in, FILE * out)
 
 	/* read and write whole header */
 	fseek (in, 0, SEEK_SET);
-	fread (Header, 950, 1, in);
+	xmp_fread (Header, 950, 1, in);
 	fwrite (Header, 950, 1, out);
 
 	/* get whole sample size */
@@ -44,14 +44,14 @@ void Depack_PM (FILE * in, FILE * out)
 	/*printf ( "Whole sanple size : %ld\n" , ssize ); */
 
 	/* read and write size of pattern list */
-	fread (&npat, 1, 1, in);
+	xmp_fread (&npat, 1, 1, in);
 	fwrite (&npat, 1, 1, out);
 	/*printf ( "Size of pattern list : %d\n" , npat ); */
 
 	memset(Header, 0, 2048);
 
 	/* read and write ntk byte and pattern list */
-	fread (Header, 129, 1, in);
+	xmp_fread (Header, 129, 1, in);
 	Header[0] = 0x7f;
 	fwrite (Header, 129, 1, out);
 
@@ -76,7 +76,7 @@ void Depack_PM (FILE * in, FILE * out)
 	fseek (in, 1084, SEEK_SET);
 	tmp = (uint8 *) malloc (Max * 1024);
 	memset(tmp, 0, Max * 1024);
-	fread (tmp, Max * 1024, 1, in);
+	xmp_fread (tmp, Max * 1024, 1, in);
 	fwrite (tmp, Max * 1024, 1, out);
 	free (tmp);
 
@@ -85,7 +85,7 @@ void Depack_PM (FILE * in, FILE * out)
 	ins_Data = (signed char *) malloc (ssize);
 	memset(tmp, 0, ssize);
 	memset(ins_Data, 0, ssize);
-	fread (tmp, ssize, 1, in);
+	xmp_fread (tmp, ssize, 1, in);
 	ins_Data[0] = tmp[0];
 	for (i = 1; i < ssize - 1; i++) {
 		ins_Data[i] = ins_Data[i - 1] + tmp[i];

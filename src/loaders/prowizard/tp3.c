@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_tp3(FILE *in, FILE *out)
+static int depack_tp3(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4;
 	uint8 pnum[128];
@@ -28,7 +28,7 @@ static int depack_tp3(FILE *in, FILE *out)
 	memset(trk_ofs, 0, 128 * 4 * 4);
 	memset(pnum, 0, 128);
 
-	fseek(in, 8, SEEK_CUR);
+	xmp_fseek(in, 8, SEEK_CUR);
 	pw_move_data(out, in, 20);		/* title */
 	nsmp = read16b(in) / 8;			/* number of sample */
 
@@ -52,7 +52,7 @@ static int depack_tp3(FILE *in, FILE *out)
 	tmp[29] = 0x01;
 
 	for (; i < 31; i++)
-		fwrite(tmp, 30, 1, out);
+		xmp_fwrite(tmp, 30, 1, out);
 
 	/* read size of pattern table */
 	read8(in);
@@ -77,10 +77,10 @@ static int depack_tp3(FILE *in, FILE *out)
 		}
 	}
 
-	fwrite(pnum, 128, 1, out);		/* write pattern list */
+	xmp_fwrite(pnum, 128, 1, out);		/* write pattern list */
 	write32b(out, PW_MOD_MAGIC);		/* ID string */
 
-	pat_ofs = ftell(in) + 2;
+	pat_ofs = xmp_ftell(in) + 2;
 
 	/* pattern datas */
 	for (i = 0; i <= npat; i++) {
@@ -89,7 +89,7 @@ static int depack_tp3(FILE *in, FILE *out)
 		for (j = 0; j < 4; j++) {
 			int where;
 
-			fseek(in, pat_ofs + trk_ofs[i][j], SEEK_SET);
+			xmp_fseek(in, pat_ofs + trk_ofs[i][j], SEEK_SET);
 
 			for (k = 0; k < 64; k++) {
 				int x = k * 16 + j * 4;
@@ -159,18 +159,18 @@ static int depack_tp3(FILE *in, FILE *out)
 				pdata[x + 2] |= fxt;
 				pdata[x + 3] = fxp;
 			}
-			where = ftell(in);
+			where = xmp_ftell(in);
 			if (where > max_trk_ofs)
 				max_trk_ofs = where;
 		}
-		fwrite(pdata, 1024, 1, out);
+		xmp_fwrite(pdata, 1024, 1, out);
 	}
 
 	/* Sample data */
 	if (max_trk_ofs & 0x01)
 		max_trk_ofs += 1;
 
-	fseek(in, max_trk_ofs, SEEK_SET);
+	xmp_fseek(in, max_trk_ofs, SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

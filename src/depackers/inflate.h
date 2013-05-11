@@ -8,7 +8,7 @@ struct inflate_data {
 };
 
 
-int inflate(FILE *, FILE *, uint32 *, int);
+int inflate(xmp_file, xmp_file, uint32 *, int);
 int build_crc32(struct inflate_data *data);
 unsigned int crc32(unsigned char *, int, unsigned int, struct inflate_data *);
 

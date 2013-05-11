@@ -8,12 +8,12 @@
 
 struct format_loader {
 	const char *name;
-	int (*const test)(FILE *, char *, const int);
-	int (*const loader)(struct module_data *, FILE *, const int);
+	int (*const test)(xmp_file, char *, const int);
+	int (*const loader)(struct module_data *, xmp_file, const int);
 };
 
 char **format_list(void);
-int pw_test_format(FILE *, char *, const int, struct xmp_test_info *);
+int pw_test_format(xmp_file, char *, const int, struct xmp_test_info *);
 
 #endif
 

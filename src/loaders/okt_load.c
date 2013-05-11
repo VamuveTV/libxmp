@@ -15,8 +15,8 @@
 #include "iff.h"
 
 
-static int okt_test (FILE *, char *, const int);
-static int okt_load (struct module_data *, FILE *, const int);
+static int okt_test (xmp_file, char *, const int);
+static int okt_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader okt_loader = {
     "Oktalyzer",
@@ -24,11 +24,11 @@ const struct format_loader okt_loader = {
     okt_load
 };
 
-static int okt_test(FILE *f, char *t, const int start)
+static int okt_test(xmp_file f, char *t, const int start)
 {
     char magic[8];
 
-    if (fread(magic, 1, 8, f) < 8)
+    if (xmp_fread(magic, 1, 8, f) < 8)
 	return -1;
 
     if (strncmp (magic, "OKTASONG", 8))
@@ -89,7 +89,7 @@ static const int fx[] = {
 };
 
 
-static void get_cmod(struct module_data *m, int size, FILE *f, void *parm)
+static void get_cmod(struct module_data *m, int size, xmp_file f, void *parm)
 { 
     struct xmp_module *mod = &m->mod;
     int i, j, k;
@@ -105,7 +105,7 @@ static void get_cmod(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_samp(struct module_data *m, int size, FILE *f, void *parm)
+static void get_samp(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -121,7 +121,7 @@ static void get_samp(struct module_data *m, int size, FILE *f, void *parm)
     for (j = i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-	fread(mod->xxi[i].name, 1, 20, f);
+	xmp_fread(mod->xxi[i].name, 1, 20, f);
 	str_adj((char *)mod->xxi[i].name);
 
 	/* Sample size is always rounded down */
@@ -150,7 +150,7 @@ static void get_samp(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_spee(struct module_data *m, int size, FILE *f, void *parm)
+static void get_spee(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
 
@@ -159,7 +159,7 @@ static void get_spee(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_slen(struct module_data *m, int size, FILE *f, void *parm)
+static void get_slen(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
 
@@ -168,7 +168,7 @@ static void get_slen(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_plen(struct module_data *m, int size, FILE *f, void *parm)
+static void get_plen(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
 
@@ -177,15 +177,15 @@ static void get_plen(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
 
-    fread(mod->xxo, 1, mod->len, f);
+    xmp_fread(mod->xxo, 1, mod->len, f);
 }
 
 
-static void get_pbod(struct module_data *m, int size, FILE *f, void *parm)
+static void get_pbod(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -249,7 +249,7 @@ static void get_pbod(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_sbod(struct module_data *m, int size, FILE *f, void *parm)
+static void get_sbod(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -271,14 +271,14 @@ static void get_sbod(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static int okt_load(struct module_data *m, FILE *f, const int start)
+static int okt_load(struct module_data *m, xmp_file f, const int start)
 {
     iff_handle handle;
     struct local_data data;
 
     LOAD_INIT();
 
-    fseek(f, 8, SEEK_CUR);	/* OKTASONG */
+    xmp_fseek(f, 8, SEEK_CUR);	/* OKTASONG */
 
     handle = iff_new();
     if (handle == NULL)
@@ -301,7 +301,7 @@ static int okt_load(struct module_data *m, FILE *f, const int start)
     MODULE_INFO();
 
     /* Load IFF chunks */
-    while (!feof(f)) {
+    while (!xmp_feof(f)) {
 	iff_chunk(handle, m, f, &data);
     }
 

@@ -9,17 +9,17 @@
 #include "common.h"
 
 
-inline uint8 read8(FILE *f)
+inline uint8 read8(xmp_file f)
 {
-	return (uint8)fgetc(f);
+	return (uint8)xmp_fgetc(f);
 }
 
-int8 read8s(FILE *f)
+int8 read8s(xmp_file f)
 {
-	return (int8)fgetc(f);
+	return (int8)xmp_fgetc(f);
 }
 
-uint16 read16l(FILE *f)
+uint16 read16l(xmp_file f)
 {
 	uint32 a, b;
 
@@ -29,7 +29,7 @@ uint16 read16l(FILE *f)
 	return (b << 8) | a;
 }
 
-uint16 read16b(FILE *f)
+uint16 read16b(xmp_file f)
 {
 	uint32 a, b;
 
@@ -39,7 +39,7 @@ uint16 read16b(FILE *f)
 	return (a << 8) | b;
 }
 
-uint32 read24l(FILE *f)
+uint32 read24l(xmp_file f)
 {
 	uint32 a, b, c;
 
@@ -50,7 +50,7 @@ uint32 read24l(FILE *f)
 	return (c << 16) | (b << 8) | a;
 }
 
-uint32 read24b(FILE *f)
+uint32 read24b(xmp_file f)
 {
 	uint32 a, b, c;
 
@@ -61,7 +61,7 @@ uint32 read24b(FILE *f)
 	return (a << 16) | (b << 8) | c;
 }
 
-uint32 read32l(FILE *f)
+uint32 read32l(xmp_file f)
 {
 	uint32 a, b, c, d;
 
@@ -73,7 +73,7 @@ uint32 read32l(FILE *f)
 	return (d << 24) | (c << 16) | (b << 8) | a;
 }
 
-uint32 read32b(FILE *f)
+uint32 read32b(xmp_file f)
 {
 	uint32 a, b, c, d;
 
@@ -87,24 +87,24 @@ uint32 read32b(FILE *f)
 
 
 
-inline void write8(FILE *f, uint8 b)
+inline void write8(xmp_file f, uint8 b)
 {
-	fputc(b, f);
+	xmp_fwrite(&b, 1, sizeof(b), f);
 }
 
-void write16l(FILE *f, uint16 w)
+void write16l(xmp_file f, uint16 w)
 {
 	write8(f, w & 0x00ff);
 	write8(f, (w & 0xff00) >> 8);
 }
 
-void write16b(FILE *f, uint16 w)
+void write16b(xmp_file f, uint16 w)
 {
 	write8(f, (w & 0xff00) >> 8);
 	write8(f, w & 0x00ff);
 }
 
-void write32l(FILE *f, uint32 w)
+void write32l(xmp_file f, uint32 w)
 {
 	write8(f, w & 0x000000ff);
 	write8(f, (w & 0x0000ff00) >> 8);
@@ -112,7 +112,7 @@ void write32l(FILE *f, uint32 w)
 	write8(f, (w & 0xff000000) >> 24);
 }
 
-void write32b(FILE *f, uint32 w)
+void write32b(xmp_file f, uint32 w)
 {
 	write8(f, (w & 0xff000000) >> 24);
 	write8(f, (w & 0x00ff0000) >> 16);
@@ -164,14 +164,14 @@ uint32 readmem32b(uint8 *m)
 	return (a << 24) | (b << 16) | (c << 8) | d;
 }
 
-int move_data(FILE *out, FILE *in, int len)
+int move_data(xmp_file out, xmp_file in, int len)
 {
 	uint8 buf[1024];
 	int l;
 
 	do {
-		l = fread(buf, 1, len > 1024 ? 1024 : len, in);
-		fwrite(buf, 1, l, out);
+		l = xmp_fread(buf, 1, len > 1024 ? 1024 : len, in);
+		xmp_fwrite(buf, 1, l, out);
 		len -= l;
 	} while (l > 0 && len > 0);
 

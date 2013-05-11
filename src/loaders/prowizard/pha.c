@@ -11,7 +11,7 @@
 #include "prowiz.h"
 
 
-static int depack_pha(FILE *in, FILE *out)
+static int depack_pha(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2;
 	uint8 pnum[128];
@@ -58,13 +58,13 @@ static int depack_pha(FILE *in, FILE *out)
 		c1 = read8(in);
 		if(c1 != 0x00)
 			c1 += 0x0b;
-		fseek(out, -6, SEEK_END);
+		xmp_fseek(out, -6, SEEK_END);
 		write8(out, c1);
-		fseek(out, 0, SEEK_END);
-		fseek(in, 1, SEEK_CUR);
+		xmp_fseek(out, 0, SEEK_END);
+		xmp_fseek(in, 1, SEEK_CUR);
 	}
 
-	fseek(in, 14, SEEK_CUR);		/* bypass unknown 14 bytes */
+	xmp_fseek(in, 14, SEEK_CUR);		/* bypass unknown 14 bytes */
 
 	for (i = 0; i < 128; i++)
 		paddr[i] = read32b(in);
@@ -170,8 +170,8 @@ restart:
 
 	write32b(out, PW_MOD_MAGIC);		/* ID string */
 
-	smp_addr = ftell(in);
-	fseek(in, pat_addr, SEEK_SET);
+	smp_addr = xmp_ftell(in);
+	xmp_fseek(in, pat_addr, SEEK_SET);
 
 	/* pattern datas */
 	/* read ALL pattern data */
@@ -185,7 +185,7 @@ restart:
 #endif
 	psize = npat * 1024;
 	pdata = (uint8 *) malloc (psize);
-	psize = fread(pdata, 1, psize, in);
+	psize = xmp_fread(pdata, 1, psize, in);
 	npat += 1;		/* coz first value is $00 */
 	pat = (uint8 *)malloc(npat * 1024);
 	memset(pat, 0, npat * 1024);
@@ -233,12 +233,12 @@ restart:
 		k += 1;
 		j += 4;
 	}
-	fwrite(pat, npat * 1024, 1, out);
+	xmp_fwrite(pat, npat * 1024, 1, out);
 	free(pdata);
 	free(pat);
 
 	/* Sample data */
-	fseek(in, smp_addr, SEEK_SET);
+	xmp_fseek(in, smp_addr, SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

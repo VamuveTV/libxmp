@@ -272,20 +272,19 @@ static void decompressS404(uint8 *src, uint8 *orgdst,
 }
 
 
-int decrunch_s404(FILE *in, /* size_t s, */ FILE *out)
+int decrunch_s404(xmp_file in, /* size_t s, */ xmp_file out)
 {
   int32 oLen, sLen, pLen;
   uint8 *dst = NULL;
-  struct stat st;
+  int file_size;
   uint8 *buf, *src;
 
-  if (fstat(fileno(in), &st))
-    return -1;
+  file_size = xmp_fsize(in);
         
-  src = buf = malloc(st.st_size);
+  src = buf = malloc(file_size);
   if (src == NULL)
     return -1;
-  fread(buf, 1, st.st_size, in);
+  xmp_fread(buf, 1, file_size, in);
 
   if (checkS404File((uint32 *) src, /*s,*/ &oLen, &pLen, &sLen)) {
     /*fprintf(stderr,"S404 Error: checkS404File() failed..\n");*/
@@ -300,7 +299,7 @@ int decrunch_s404(FILE *in, /* size_t s, */ FILE *out)
   /* src + 16 skips S404 header */
   decompressS404(src + 16, dst, oLen, pLen);
 
-  if (fwrite(dst, oLen, 1, out) == 0) {
+  if (xmp_fwrite(dst, oLen, 1, out) == 0) {
       /*fprintf(stderr,"S404 Error: fwrite() failed..\n");*/
       goto error1;
   }

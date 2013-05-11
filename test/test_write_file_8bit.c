@@ -2,19 +2,19 @@
 
 TEST(test_write_file_8bit)
 {
-	FILE *f;
+	xmp_file f;
 	int x;
 
-	f = fopen("write_test", "wb");
+	f = xmp_fopen("write_test", "wb");
 	fail_unless(f != NULL, "can't open data file");
 
 	write8(f, 0x66);
-	fclose(f);
+	xmp_fclose(f);
 
-	f = fopen("write_test", "rb");
+	f = xmp_fopen("write_test", "rb");
 	x = read8(f);
 	fail_unless(x == 0x66, "read error");
 
-	fclose(f);
+	xmp_fclose(f);
 }
 END_TEST

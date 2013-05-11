@@ -82,7 +82,7 @@ struct bit_buffer {
 	uint32 buffer;
 };
 
-static uint32 get_bits(FILE *f, int n, struct bit_buffer *bb)
+static uint32 get_bits(xmp_file f, int n, struct bit_buffer *bb)
 {
 	uint32 bits;
 
@@ -103,7 +103,7 @@ static uint32 get_bits(FILE *f, int n, struct bit_buffer *bb)
 }
 
 static void block_copy(struct block *block, struct sub_block *sub,
-		       FILE *in, FILE *out)
+		       xmp_file in, xmp_file out)
 {
 	int i;
 
@@ -113,7 +113,7 @@ static void block_copy(struct block *block, struct sub_block *sub,
 }
 
 static void block_unpack_16bit(struct block *block, struct sub_block *sub,
-			       FILE *in, FILE *out)
+			       xmp_file in, xmp_file out)
 {
 	struct bit_buffer bb;
 	uint32 pos = 0;
@@ -123,8 +123,8 @@ static void block_unpack_16bit(struct block *block, struct sub_block *sub,
 	bb.count = 0;
 	bb.buffer = 0;
 
-	fseek(out, sub->unpk_pos, SEEK_SET);
-	fseek(in, block->tt_entries, SEEK_SET);
+	xmp_fseek(out, sub->unpk_pos, SEEK_SET);
+	xmp_fseek(in, block->tt_entries, SEEK_SET);
 
 	for (j = 0; j < block->sub_blk; ) {
 		uint32 size = sub[j].unpk_size >> 1;
@@ -174,13 +174,13 @@ static void block_unpack_16bit(struct block *block, struct sub_block *sub,
 				break;
 
 			pos = 0;
-			fseek(out, sub[j].unpk_pos, SEEK_SET);
+			xmp_fseek(out, sub[j].unpk_pos, SEEK_SET);
 		}
 	}
 }
 
 static void block_unpack_8bit(struct block *block, struct sub_block *sub,
-			      FILE *in, FILE *out)
+			      xmp_file in, xmp_file out)
 {
 	struct bit_buffer bb;
 	uint32 pos = 0;
@@ -188,13 +188,13 @@ static void block_unpack_8bit(struct block *block, struct sub_block *sub,
 	uint32 j, oldval = 0;
 	uint8 ptable[0x100];
 
-	fread(ptable, 1, 0x100, in);
+	xmp_fread(ptable, 1, 0x100, in);
 
 	bb.count = 0;
 	bb.buffer = 0;
 
-	fseek(out, sub->unpk_pos, SEEK_SET);
-	fseek(in, block->tt_entries, SEEK_SET);
+	xmp_fseek(out, sub->unpk_pos, SEEK_SET);
+	xmp_fseek(in, block->tt_entries, SEEK_SET);
 
 	for (j = 0; j < block->sub_blk; ) {
 		uint32 size = sub[j].unpk_size;
@@ -237,12 +237,12 @@ static void block_unpack_8bit(struct block *block, struct sub_block *sub,
 				break;
 ;
 			pos = 0;
-			fseek(out, sub[j].unpk_pos, SEEK_SET);
+			xmp_fseek(out, sub[j].unpk_pos, SEEK_SET);
 		}
 	}
 }
 
-int decrunch_mmcmp(FILE *in, FILE *out)
+int decrunch_mmcmp(xmp_file in, xmp_file out)
 {
 	struct header h;
 	uint32 *table;
@@ -268,7 +268,7 @@ int decrunch_mmcmp(FILE *in, FILE *out)
 		return -1;
 
 	/* Block table */
-	fseek(in, h.blktable, SEEK_SET);
+	xmp_fseek(in, h.blktable, SEEK_SET);
 	table = malloc(h.nblocks * 4);
 	if (table == NULL)
 		return -1;
@@ -281,7 +281,7 @@ int decrunch_mmcmp(FILE *in, FILE *out)
 		struct block block;
 		struct sub_block *sub_block;
 
-		fseek(in, table[i], SEEK_SET);
+		xmp_fseek(in, table[i], SEEK_SET);
 		block.unpk_size  = read32l(in);
 		block.pk_size    = read32l(in);
 		block.xor_chk    = read32l(in);
@@ -299,7 +299,7 @@ int decrunch_mmcmp(FILE *in, FILE *out)
 			sub_block[j].unpk_size = read32l(in);
 		}
 
-		block.tt_entries += ftell(in);
+		block.tt_entries += xmp_ftell(in);
 
 		if (~block.flags & MMCMP_COMP) {
 			/* Data is not packed */

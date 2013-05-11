@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_tdd(FILE *in, FILE *out)
+static int depack_tdd(xmp_file in, xmp_file out)
 {
 	uint8 *tmp;
 	uint8 pat[1024];
@@ -29,9 +29,9 @@ static int depack_tdd(FILE *in, FILE *out)
 	/* read/write pattern list + size and ntk byte */
 	tmp = (uint8 *)malloc(130);
 	memset(tmp, 0, 130);
-	fseek(out, 950, 0);
-	fread(tmp, 130, 1, in);
-	fwrite(tmp, 130, 1, out);
+	xmp_fseek(out, 950, 0);
+	xmp_fread(tmp, 130, 1, in);
+	xmp_fwrite(tmp, 130, 1, out);
 
 	for (pmax = i = 0; i < 128; i++) {
 		if (tmp[i + 2] > pmax) {
@@ -42,7 +42,7 @@ static int depack_tdd(FILE *in, FILE *out)
 
 	/* sample descriptions */
 	for (i = 0; i < 31; i++) {
-		fseek(out, 42 + (i * 30), SEEK_SET);
+		xmp_fseek(out, 42 + (i * 30), SEEK_SET);
 		/* sample address */
 		saddr[i] = read32b(in);
 
@@ -59,10 +59,10 @@ static int depack_tdd(FILE *in, FILE *out)
 	}
 
 	/* bypass Samples datas */
-	fseek(in, ssize, SEEK_CUR);
+	xmp_fseek(in, ssize, SEEK_CUR);
 
 	/* write ptk's ID string */
-	fseek(out, 0, SEEK_END);
+	xmp_fseek(out, 0, SEEK_END);
 	write32b(out, PW_MOD_MAGIC);
 
 	/* read/write pattern data */
@@ -70,7 +70,7 @@ static int depack_tdd(FILE *in, FILE *out)
 	for (i = 0; i <= pmax; i++) {
 		memset(tmp, 0, 1024);
 		memset(pat, 0, 1024);
-		fread(tmp, 1024, 1, in);
+		xmp_fread(tmp, 1024, 1, in);
 		for (j = 0; j < 64; j++) {
 			for (k = 0; k < 4; k++) {
 				int x = j * 16 + k * 4;
@@ -90,7 +90,7 @@ static int depack_tdd(FILE *in, FILE *out)
 				pat[x + 1] = ptk_table[tmp[x + 1] / 2][1];
 			}
 		}
-		fwrite(pat, 1024, 1, out);
+		xmp_fwrite(pat, 1024, 1, out);
 	}
 	free(tmp);
 
@@ -98,7 +98,7 @@ static int depack_tdd(FILE *in, FILE *out)
 	for (i = 0; i < 31; i++) {
 		if (ssizes[i] == 0)
 			continue;
-		fseek(in, saddr[i], SEEK_SET);
+		xmp_fseek(in, saddr[i], SEEK_SET);
 		pw_move_data(out, in, ssizes[i]);
 	}
 

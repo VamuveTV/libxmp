@@ -10,8 +10,8 @@
 #include "depackers/readlzw.h"
 
 
-static int sym_test(FILE *, char *, const int);
-static int sym_load (struct module_data *, FILE *, const int);
+static int sym_test(xmp_file, char *, const int);
+static int sym_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader sym_loader = {
 	"Digital Symphony",
@@ -19,7 +19,7 @@ const struct format_loader sym_loader = {
 	sym_load
 };
 
-static int sym_test(FILE * f, char *t, const int start)
+static int sym_test(xmp_file f, char *t, const int start)
 {
 	uint32 a, b;
 	int i, ver;
@@ -226,7 +226,7 @@ static uint32 readptr16l(uint8 *p)
 	return (b << 8) | a;
 }
 
-static int sym_load(struct module_data *m, FILE *f, const int start)
+static int sym_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -239,7 +239,7 @@ static int sym_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fseek(f, 8, SEEK_CUR);			/* BASSTRAK */
+	xmp_fseek(f, 8, SEEK_CUR);			/* BASSTRAK */
 
 	ver = read8(f);
 	set_type(m, "Digital Symphony");
@@ -264,8 +264,8 @@ static int sym_load(struct module_data *m, FILE *f, const int start)
 
 	a = read8(f);			/* track name length */
 
-	fread(mod->name, 1, a, f);
-	fread(&allowed_effects, 1, 8, f);
+	xmp_fread(mod->name, 1, a, f);
+	xmp_fread(&allowed_effects, 1, 8, f);
 
 	MODULE_INFO();
 
@@ -292,7 +292,7 @@ static int sym_load(struct module_data *m, FILE *f, const int start)
 			return -1;
 		}
 	} else {
-		fread(buf, 1, size, f);
+		xmp_fread(buf, 1, size, f);
 	}
 
 	for (i = 0; i < mod->len; i++) {	/* len == pat */
@@ -332,7 +332,7 @@ static int sym_load(struct module_data *m, FILE *f, const int start)
 			return -1;
 		}
 	} else {
-		fread(buf, 1, size, f);
+		xmp_fread(buf, 1, size, f);
 	}
 
 	for (i = 0; i < mod->trk - 1; i++) {
@@ -376,7 +376,7 @@ static int sym_load(struct module_data *m, FILE *f, const int start)
 		uint8 buf[128];
 
 		memset(buf, 0, 128);
-		fread(buf, 1, sn[i] & 0x7f, f);
+		xmp_fread(buf, 1, sn[i] & 0x7f, f);
 		copy_adjust(mod->xxi[i].name, buf, 32);
 
 		if (~sn[i] & 0x80) {

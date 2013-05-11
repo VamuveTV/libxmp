@@ -40,7 +40,7 @@ struct member {
 	uint8 os;
 };
 
-int decrunch_gzip(FILE *in, FILE *out)
+int decrunch_gzip(xmp_file in, xmp_file out)
 {
 	struct member member;
 	int val, c;
@@ -60,7 +60,7 @@ int decrunch_gzip(FILE *in, FILE *out)
 
 	if (member.flg & FLAG_FEXTRA) {
 		int xlen = read16l(in);
-		fseek(in, xlen, SEEK_CUR);
+		xmp_fseek(in, xlen, SEEK_CUR);
 	}
 
 	if (member.flg & FLAG_FNAME) {
@@ -92,7 +92,7 @@ int decrunch_gzip(FILE *in, FILE *out)
 
 	/* Check file size */
 	val = read32l(in);
-	if (val != ftell(out)) {
+	if (val != xmp_ftell(out)) {
 		return -1;
 	}
 

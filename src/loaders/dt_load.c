@@ -15,8 +15,8 @@
 #define MAGIC_D_T_	MAGIC4('D','.','T','.')
 
 
-static int dt_test(FILE *, char *, const int);
-static int dt_load (struct module_data *, FILE *, const int);
+static int dt_test(xmp_file, char *, const int);
+static int dt_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader dt_loader = {
 	"Digital Tracker (DTM)",
@@ -24,7 +24,7 @@ const struct format_loader dt_loader = {
 	dt_load
 };
 
-static int dt_test(FILE *f, char *t, const int start)
+static int dt_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_D_T_)
 		return -1;
@@ -49,7 +49,7 @@ struct local_data {
 };
 
 
-static void get_d_t_(struct module_data *m, int size, FILE *f, void *parm)
+static void get_d_t_(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int b;
@@ -62,13 +62,13 @@ static void get_d_t_(struct module_data *m, int size, FILE *f, void *parm)
 		mod->bpm = b;
 	read32b(f);			/* undocumented */
 
-	fread(mod->name, 32, 1, f);
+	xmp_fread(mod->name, 32, 1, f);
 	set_type(m, "Digital Tracker DTM");
 
 	MODULE_INFO();
 }
 
-static void get_s_q_(struct module_data *m, int size, FILE *f, void *parm)
+static void get_s_q_(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, maxpat;
@@ -85,7 +85,7 @@ static void get_s_q_(struct module_data *m, int size, FILE *f, void *parm)
 	mod->pat = maxpat + 1;
 }
 
-static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -95,7 +95,7 @@ static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
 	mod->trk = mod->chn * mod->pat;
 }
 
-static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
+static void get_inst(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, c2spd;
@@ -123,7 +123,7 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 		mod->xxs[i].lpe = mod->xxs[i].lps + replen - 1;
 		mod->xxs[i].flg = replen > 2 ?  XMP_SAMPLE_LOOP : 0;
 
-		fread(name, 22, 1, f);
+		xmp_fread(name, 22, 1, f);
 		copy_adjust(mod->xxi[i].name, name, 22);
 
 		flag = read16b(f);	/* bit 0-7:resol 8:stereo */
@@ -158,7 +158,7 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_dapt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_dapt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -206,7 +206,7 @@ static void get_dapt(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_dait(struct module_data *m, int size, FILE *f, void *parm)
+static void get_dait(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -226,7 +226,7 @@ static void get_dait(struct module_data *m, int size, FILE *f, void *parm)
 	i++;
 }
 
-static int dt_load(struct module_data *m, FILE *f, const int start)
+static int dt_load(struct module_data *m, xmp_file f, const int start)
 {
 	iff_handle handle;
 	struct local_data data;
@@ -248,7 +248,7 @@ static int dt_load(struct module_data *m, FILE *f, const int start)
 	iff_register(handle, "DAIT", get_dait);
 
 	/* Load IFF chunks */
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		iff_chunk(handle, m, f , &data);
 	}
 

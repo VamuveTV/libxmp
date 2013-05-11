@@ -12,7 +12,7 @@
 #include "prowiz.h"
 
 
-static int depack_pp21(FILE *in, FILE *out)
+static int depack_pp21(xmp_file in, xmp_file out)
 {
 	uint8 ptable[128];
 	int max = 0;
@@ -75,7 +75,7 @@ static int depack_pp21(FILE *in, FILE *out)
 
 	/* read "reference Table" */
 	tab = (uint8 *)malloc(tabsize);
-	fread(tab, tabsize, 1, in);
+	xmp_fread(tab, tabsize, 1, in);
 
 	for (i = 0; i < numpat; i++) {
 		memset(buf, 0, 1024);
@@ -86,7 +86,7 @@ static int depack_pp21(FILE *in, FILE *out)
 			memcpy(b + 8, tab + tptr[trk[2][i]][j] * 4, 4);
 			memcpy(b + 12, tab + tptr[trk[3][i]][j] * 4, 4);
 		}
-		fwrite (buf, 1024, 1, out);
+		xmp_fwrite (buf, 1024, 1, out);
 	}
 
 	free (tab);

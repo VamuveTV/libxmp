@@ -14,8 +14,8 @@
 #define MAGIC_IT10	MAGIC4('I','T','1','0')
 
 
-static int ice_test (FILE *, char *, const int);
-static int ice_load (struct module_data *, FILE *, const int);
+static int ice_test (xmp_file, char *, const int);
+static int ice_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader ice_loader = {
     "Soundtracker 2.6/Ice Tracker (MTN)",
@@ -23,16 +23,16 @@ const struct format_loader ice_loader = {
     ice_load
 };
 
-static int ice_test(FILE *f, char *t, const int start)
+static int ice_test(xmp_file f, char *t, const int start)
 {
     uint32 magic;
 
-    fseek(f, start + 1464, SEEK_SET);
+    xmp_fseek(f, start + 1464, SEEK_SET);
     magic = read32b(f);
     if (magic != MAGIC_MTN_ && magic != MAGIC_IT10)
 	return -1;
 
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 28);
 
     return 0;
@@ -58,7 +58,7 @@ struct ice_header {
 };
 
 
-static int ice_load(struct module_data *m, FILE *f, const int start)
+static int ice_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -68,9 +68,9 @@ static int ice_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&ih.title, 20, 1, f);
+    xmp_fread(&ih.title, 20, 1, f);
     for (i = 0; i < 31; i++) {
-	fread(&ih.ins[i].name, 22, 1, f);
+	xmp_fread(&ih.ins[i].name, 22, 1, f);
 	ih.ins[i].len = read16b(f);
 	ih.ins[i].finetune = read8(f);
 	ih.ins[i].volume = read8(f);
@@ -79,7 +79,7 @@ static int ice_load(struct module_data *m, FILE *f, const int start)
     }
     ih.len = read8(f);
     ih.trk = read8(f);
-    fread(&ih.ord, 128 * 4, 1, f);
+    xmp_fread(&ih.ord, 128 * 4, 1, f);
     ih.magic = read32b(f);
 
     if (ih.magic == MAGIC_IT10)
@@ -138,7 +138,7 @@ static int ice_load(struct module_data *m, FILE *f, const int start)
 	mod->xxt[i]->rows = 64;
 	for (j = 0; j < mod->xxt[i]->rows; j++) {
 		event = &mod->xxt[i]->event[j];
-		fread (ev, 1, 4, f);
+		xmp_fread (ev, 1, 4, f);
 		cvt_pt_event (event, ev);
 	}
     }

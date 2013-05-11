@@ -24,8 +24,8 @@
 
 #define MAX_SAMP 1024
 
-static int xm_test (FILE *, char *, const int);
-static int xm_load (struct module_data *, FILE *, const int);
+static int xm_test (xmp_file, char *, const int);
+static int xm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader xm_loader = {
     "Fast Tracker II (XM)",
@@ -33,11 +33,11 @@ const struct format_loader xm_loader = {
     xm_load
 };
 
-static int xm_test(FILE *f, char *t, const int start)
+static int xm_test(xmp_file f, char *t, const int start)
 {
     char buf[20];
 
-    if (fread(buf, 1, 17, f) < 17)		/* ID text */
+    if (xmp_fread(buf, 1, 17, f) < 17)		/* ID text */
 	return -1;
 
     if (memcmp(buf, "Extended Module: ", 17))
@@ -48,7 +48,7 @@ static int xm_test(FILE *f, char *t, const int start)
     return 0;
 }
 
-static int xm_load(struct module_data *m, FILE *f, const int start)
+static int xm_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j, r;
@@ -64,10 +64,10 @@ static int xm_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&xfh.id, 17, 1, f);		/* ID text */
-    fread(&xfh.name, 20, 1, f);		/* Module name */
+    xmp_fread(&xfh.id, 17, 1, f);		/* ID text */
+    xmp_fread(&xfh.name, 20, 1, f);		/* Module name */
     read8(f);				/* 0x1a */
-    fread(&xfh.tracker, 20, 1, f);	/* Tracker name */
+    xmp_fread(&xfh.tracker, 20, 1, f);	/* Tracker name */
     xfh.version = read16l(f);		/* Version number, minor-major */
     xfh.headersz = read32l(f);		/* Header size */
     xfh.songlen = read16l(f);		/* Song length */
@@ -80,7 +80,7 @@ static int xm_load(struct module_data *m, FILE *f, const int start)
     xfh.bpm = read16l(f);		/* Default BPM */
 
     /* Honor header size -- needed by BoobieSqueezer XMs */
-    fread(&xfh.order, xfh.headersz - 0x14, 1, f); /* Pattern order table */
+    xmp_fread(&xfh.order, xfh.headersz - 0x14, 1, f); /* Pattern order table */
 
     strncpy(mod->name, (char *)xfh.name, 20);
 
@@ -126,7 +126,7 @@ static int xm_load(struct module_data *m, FILE *f, const int start)
 
     /* Honor header size */
 
-    fseek(f, start + xfh.headersz + 60, SEEK_SET);
+    xmp_fseek(f, start + xfh.headersz + 60, SEEK_SET);
 
     /* XM 1.02/1.03 has a different structure. This is a hack to re-order
      * the loader and recognize 1.02 files correctly.
@@ -155,7 +155,7 @@ load_patterns:
 
 	if (xph.datasize) {
 	    pat = patbuf = calloc(1, xph.datasize);
-	    fread (patbuf, 1, xph.datasize, f);
+	    xmp_fread (patbuf, 1, xph.datasize, f);
 	    for (j = 0; j < (mod->chn * r); j++) {
 		if ((pat - patbuf) >= xph.datasize)
 		    break;
@@ -279,12 +279,12 @@ load_instruments:
 	 * instruments, but file may end abruptly before that. This test
 	 * will not work if file has trailing garbage.
 	 */
-	if (feof(f)) {
+	if (xmp_feof(f)) {
 		mod->ins = i;
 		break;
 	}
 
-	fread(&xih.name, 22, 1, f);		/* Instrument name */
+	xmp_fread(&xih.name, 22, 1, f);		/* Instrument name */
 	xih.type = read8(f);			/* Instrument type (always 0) */
 	xih.samples = read16l(f);		/* Number of samples */
 	xih.sh_size = read32l(f);		/* Sample header size */
@@ -315,7 +315,7 @@ load_instruments:
 		read32l(f);
 		memset(&xi, 0, sizeof (struct xm_instrument));
 	    } else {
-		fread(&xi.sample, 96, 1, f);	/* Sample map */
+		xmp_fread(&xi.sample, 96, 1, f);	/* Sample map */
 		for (j = 0; j < 24; j++)
 		    xi.v_env[j] = read16l(f);	/* Points for volume envelope */
 		for (j = 0; j < 24; j++)
@@ -337,7 +337,7 @@ load_instruments:
 		xi.v_fade = read16l(f);		/* Volume fadeout */
 
 		/* Skip reserved space */
-		fseek(f, (int)xih.size - 33 /*sizeof (xih)*/ - 208 /*sizeof (xi)*/, SEEK_CUR);
+		xmp_fseek(f, (int)xih.size - 33 /*sizeof (xih)*/ - 208 /*sizeof (xi)*/, SEEK_CUR);
 
 		/* Envelope */
 		mod->xxi[i].rls = xi.v_fade;
@@ -378,7 +378,7 @@ load_instruments:
 		xsh[j].pan = read8(f);		/* Panning (0-255) */
 		xsh[j].relnote = read8s(f);	/* Relative note number */
 		xsh[j].reserved = read8(f);
-		fread(&xsh[j].name, 22, 1, f);	/* Sample_name */
+		xmp_fread(&xsh[j].name, 22, 1, f);	/* Sample_name */
 
 		mod->xxi[i].sub[j].vol = xsh[j].volume;
 		mod->xxi[i].sub[j].pan = xsh[j].pan;
@@ -449,7 +449,7 @@ load_instruments:
 	     * generalization should take care of both cases.
 	     */
 
-	     fseek(f, (int)xih.size - 33 /*sizeof (xih)*/, SEEK_CUR);
+	     xmp_fseek(f, (int)xih.size - 33 /*sizeof (xih)*/, SEEK_CUR);
 	}
     }
     mod->smp = sample_num;

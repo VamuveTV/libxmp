@@ -12,7 +12,7 @@
 #define MAGIC_TRK1	MAGIC4('T','R','K','1')
 
 
-static int depack_mp(FILE *in, FILE *out)
+static int depack_mp(xmp_file in, xmp_file out)
 {
 	uint8 c1;
 	uint8 ptable[128];
@@ -25,7 +25,7 @@ static int depack_mp(FILE *in, FILE *out)
 	pw_write_zero(out, 20);				/* title */
 
 	if (read32b(in) != MAGIC_TRK1)			/* TRK1 */
-		fseek(in, -4, SEEK_CUR);
+		xmp_fseek(in, -4, SEEK_CUR);
 
 	for (i = 0; i < 31; i++) {
 		pw_write_zero(out, 22);			/* sample name */
@@ -50,7 +50,7 @@ static int depack_mp(FILE *in, FILE *out)
 	write32b(out, PW_MOD_MAGIC);		/* M.K. */
 
 	if (read32b(in) != 0)			/* bypass unknown empty bytes */
-		fseek (in, -4, SEEK_CUR);
+		xmp_fseek (in, -4, SEEK_CUR);
 
 	pw_move_data(out, in, 1024 * max);	/* pattern data */
 	pw_move_data(out, in, ssize);		/* sample data */

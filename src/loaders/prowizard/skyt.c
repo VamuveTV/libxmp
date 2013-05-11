@@ -8,7 +8,7 @@
 #include "prowiz.h"
 
 
-static int depack_skyt(FILE *in, FILE *out)
+static int depack_skyt(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4;
 	uint8 ptable[128];
@@ -57,13 +57,13 @@ static int depack_skyt(FILE *in, FILE *out)
 	read8(in);				/* bypass $00 unknown byte */
 
 	/* get track address */
-	trk_addr = ftell(in);
+	trk_addr = xmp_ftell(in);
 
 	/* track data */
 	for (i = 0; i < pat_pos; i++) {
 		memset(pat, 0, 1024);
 		for (j = 0; j < 4; j++) {
-			fseek(in, trk_addr + ((trkval[i][j] - 1)<<8), SEEK_SET);
+			xmp_fseek(in, trk_addr + ((trkval[i][j] - 1)<<8), SEEK_SET);
 			for (k = 0; k < 64; k++) {
 				int x = k * 16 + j * 4;
 
@@ -78,7 +78,7 @@ static int depack_skyt(FILE *in, FILE *out)
 				pat[x + 3] = c4;
 			}
 		}
-		fwrite(pat, 1024, 1, out);
+		xmp_fwrite(pat, 1024, 1, out);
 	}
 
 	/* sample data */

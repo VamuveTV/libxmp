@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_GMC(FILE *in, FILE *out)
+static int depack_GMC(xmp_file in, xmp_file out)
 {
 	uint8 tmp[1024];
 	uint8 ptable[128];
@@ -43,9 +43,9 @@ static int depack_GMC(FILE *in, FILE *out)
 	memset(tmp, 0, 30);
 	tmp[29] = 0x01;
 	for (i = 0; i < 16; i++)
-		fwrite(tmp, 30, 1, out);
+		xmp_fwrite(tmp, 30, 1, out);
 
-	fseek(in, 0xf3, 0);
+	xmp_fseek(in, 0xf3, 0);
 	write8(out, PatPos = read8(in));	/* pattern list size */
 	write8(out, 0x7f);			/* ntk byte */
 
@@ -53,7 +53,7 @@ static int depack_GMC(FILE *in, FILE *out)
 	/*printf ( "Creating the pattern table ... " ); */
 	for (i = 0; i < 100; i++)
 		ptable[i] = read16b(in) / 1024;
-	fwrite(ptable, 128, 1, out);
+	xmp_fwrite(ptable, 128, 1, out);
 
 	/* get number of pattern */
 	for (max = i = 0; i < 128; i++) {
@@ -65,10 +65,10 @@ static int depack_GMC(FILE *in, FILE *out)
 	write32b(out, PW_MOD_MAGIC);
 
 	/* pattern data */
-	fseek(in, 444, SEEK_SET);
+	xmp_fseek(in, 444, SEEK_SET);
 	for (i = 0; i <= max; i++) {
 		memset(tmp, 0, 1024);
-		fread(tmp, 1024, 1, in);
+		xmp_fread(tmp, 1024, 1, in);
 		for (j = 0; j < 256; j++) {
 			switch (tmp[(j * 4) + 2] & 0x0f) {
 			case 3:	/* replace by C */
@@ -93,7 +93,7 @@ static int depack_GMC(FILE *in, FILE *out)
 				break;
 			}
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* sample data */

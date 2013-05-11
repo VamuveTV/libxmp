@@ -16,9 +16,9 @@
 #define MAGIC_VERS	MAGIC4('V','E','R','S')
 #define MAGIC_INFO	MAGIC4('I','N','F','O')
 
-static int pt3_test(FILE *, char *, const int);
-static int pt3_load(struct module_data *, FILE *, const int);
-static int ptdt_load(struct module_data *, FILE *, const int);
+static int pt3_test(xmp_file, char *, const int);
+static int pt3_load(struct module_data *, xmp_file, const int);
+static int ptdt_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader pt3_loader = {
 	"Protracker 3",
@@ -26,7 +26,7 @@ const struct format_loader pt3_loader = {
 	pt3_load
 };
 
-static int pt3_test(FILE *f, char *t, const int start)
+static int pt3_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_FORM)
 		return -1;
@@ -41,7 +41,7 @@ static int pt3_test(FILE *f, char *t, const int start)
 
 	read32b(f);	/* skip size */
 
-	fseek(f, 10, SEEK_CUR);
+	xmp_fseek(f, 10, SEEK_CUR);
 	
 	if (read32b(f) == MAGIC_INFO) {
 		read32b(f);	/* skip size */
@@ -63,14 +63,14 @@ static int pt3_test(FILE *f, char *t, const int start)
 #define PT3_FLAG_RAWPAT	0x0080	/* Packed patterns if not set */
 
 
-static void get_info(struct module_data *m, int size, FILE *f, void *parm)
+static void get_info(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int flags;
 	int day, month, year, hour, min, sec;
 	int dhour, dmin, dsec;
 
-	fread(mod->name, 1, 32, f);
+	xmp_fread(mod->name, 1, 32, f);
 	mod->ins = read16b(f);
 	mod->len = read16b(f);
 	mod->pat = read16b(f);
@@ -94,17 +94,17 @@ static void get_info(struct module_data *m, int size, FILE *f, void *parm)
 	D_(D_INFO "Playing time: %02d:%02d:%02d", dhour, dmin, dsec);
 }
 
-static void get_cmnt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_cmnt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	D_(D_INFO "Comment size: %d", size);
 }
 
-static void get_ptdt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_ptdt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	ptdt_load(m, f, 0);
 }
 
-static int pt3_load(struct module_data *m, FILE *f, const int start)
+static int pt3_load(struct module_data *m, xmp_file f, const int start)
 {
 	iff_handle handle;
 	char buf[20];
@@ -118,7 +118,7 @@ static int pt3_load(struct module_data *m, FILE *f, const int start)
 	read32b(f);		/* VERS */
 	read32b(f);		/* VERS size */
 
-	fread(buf, 1, 10, f);
+	xmp_fread(buf, 1, 10, f);
 	set_type(m, "%-6.6s IFFMODL", buf + 4);
 
 	handle = iff_new();
@@ -133,7 +133,7 @@ static int pt3_load(struct module_data *m, FILE *f, const int start)
 	iff_set_quirk(handle, IFF_FULL_CHUNK_SIZE);
 
 	/* Load IFF chunks */
-	while (!feof(f))
+	while (!xmp_feof(f))
 		iff_chunk(handle, m, f, NULL);
 
 	iff_release(handle);
@@ -141,7 +141,7 @@ static int pt3_load(struct module_data *m, FILE *f, const int start)
 	return 0;
 }
 
-static int ptdt_load(struct module_data *m, FILE *f, const int start)
+static int ptdt_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j;
@@ -149,9 +149,9 @@ static int ptdt_load(struct module_data *m, FILE *f, const int start)
 	struct mod_header mh;
 	uint8 mod_event[4];
 
-	fread(&mh.name, 20, 1, f);
+	xmp_fread(&mh.name, 20, 1, f);
 	for (i = 0; i < 31; i++) {
-		fread(&mh.ins[i].name, 22, 1, f);
+		xmp_fread(&mh.ins[i].name, 22, 1, f);
 		mh.ins[i].size = read16b(f);
 		mh.ins[i].finetune = read8(f);
 		mh.ins[i].volume = read8(f);
@@ -160,8 +160,8 @@ static int ptdt_load(struct module_data *m, FILE *f, const int start)
 	}
 	mh.len = read8(f);
 	mh.restart = read8(f);
-	fread(&mh.order, 128, 1, f);
-	fread(&mh.magic, 4, 1, f);
+	xmp_fread(&mh.order, 128, 1, f);
+	xmp_fread(&mh.magic, 4, 1, f);
 
 	mod->ins = 31;
 	mod->smp = mod->ins;
@@ -215,7 +215,7 @@ static int ptdt_load(struct module_data *m, FILE *f, const int start)
 		TRACK_ALLOC(i);
 		for (j = 0; j < (64 * 4); j++) {
 			event = &EVENT(i, j % 4, j / 4);
-			fread(mod_event, 1, 4, f);
+			xmp_fread(mod_event, 1, 4, f);
 			cvt_pt_event(event, mod_event);
 		}
 	}

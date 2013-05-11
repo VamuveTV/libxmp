@@ -62,7 +62,7 @@ avoid off-by-one errors. */
 #define MEM_BLOCK_SIZE	(8192 + 8192 + 256 + 8)
 
 
-typedef FILE *BLOCKFILE;
+typedef xmp_file BLOCKFILE;
 
 struct tabentry {
    unsigned next;
@@ -106,8 +106,8 @@ static unsigned masks[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0,
 static unsigned bit_offset;
 static unsigned output_offset;
 
-#define		BLOCKREAD(f,b,c) fread((b),1,(c),(f))
-#define		BLOCKWRITE(f,b,c) fwrite((b),1,(c),(f))
+#define		BLOCKREAD(f,b,c) xmp_fread((b),1,(c),(f))
+#define		BLOCKWRITE(f,b,c) xmp_fwrite((b),1,(c),(f))
 
 
 static void addbfcrc(char *buffer, int count, struct lzd_data *data)
@@ -404,8 +404,8 @@ struct entry {
 #define BITS_PRE	5	/* 2^BITS_PRE > MAX_PRE (+1?)      */
 
 struct local_data {
-	FILE *in;
-	FILE *out;
+	xmp_file in;
+	xmp_file out;
 	struct description desc;
 	struct entry entry;
 	char buffer[8192];		/* at least MAX_OFF */
@@ -548,7 +548,7 @@ static int read_entry(struct local_data *data)
 */
 static uint32 write_block(char *blk, uint32 len, struct local_data *data)
 {
-	return fwrite(blk, 1, len, data->out);
+	return xmp_fwrite(blk, 1, len, data->out);
 }
 
 /****************************************************************************
@@ -1101,7 +1101,7 @@ static int decode_lzh(struct local_data *data)
 **  will.  <pre> is a prefix that is prepended to all path names.
 */
 
-int decrunch_zoo(FILE *in, FILE *out)
+int decrunch_zoo(xmp_file in, xmp_file out)
 {
 	struct local_data *data;
 	int res;
@@ -1120,7 +1120,7 @@ int decrunch_zoo(FILE *in, FILE *out)
 	/* loop over the members of the archive */
 	data->entry.posnxt = data->desc.posent;
 	while (1) {
-		if (fseek(data->in, data->entry.posnxt, SEEK_SET) || !read_entry(data))
+		if (xmp_fseek(data->in, data->entry.posnxt, SEEK_SET) || !read_entry(data))
 			goto err1;
 		if (!data->entry.posnxt)
 			break;
@@ -1135,7 +1135,7 @@ int decrunch_zoo(FILE *in, FILE *out)
 			continue;
 
 	        /* decode the file */
-		if (fseek(data->in, data->entry.posdat, SEEK_SET))
+		if (xmp_fseek(data->in, data->entry.posdat, SEEK_SET))
 			continue;
 
 		data->out = out;

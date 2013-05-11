@@ -14,8 +14,8 @@
  */
 
 
-static int no_test (FILE *, char *, const int);
-static int no_load (struct module_data *, FILE *, const int);
+static int no_test (xmp_file, char *, const int);
+static int no_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader no_loader = {
 	"Liquid Tracker NO (LIQ)",
@@ -23,7 +23,7 @@ const struct format_loader no_loader = {
 	no_load
 };
 
-static int no_test(FILE *f, char *t, const int start)
+static int no_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != 0x4e4f0000)		/* NO 0x00 0x00 */
 		return -1;
@@ -53,7 +53,7 @@ static const uint8 fx[] = {
 };
 
 
-static int no_load(struct module_data *m, FILE *f, const int start)
+static int no_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -94,7 +94,7 @@ static int no_load(struct module_data *m, FILE *f, const int start)
 			break;
 		mod->xxo[i] = x;
 	}
-	fseek(f, 255 - i, SEEK_CUR);
+	xmp_fseek(f, 255 - i, SEEK_CUR);
 	mod->len = i;
 
 	MODULE_INFO();

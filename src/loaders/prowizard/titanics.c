@@ -19,7 +19,7 @@ static int cmplong(const void *a, const void *b)
 }
 
 
-static int depack_titanics(FILE *in, FILE *out)
+static int depack_titanics(xmp_file in, xmp_file out)
 {
 	uint8 buf[1024];
 	long pat_addr[128];
@@ -56,7 +56,7 @@ static int depack_titanics(FILE *in, FILE *out)
 	}
 
 	/* pattern list */
-	fread(buf, 2, 128, in);
+	xmp_fread(buf, 2, 128, in);
 	for (pat = 0; pat < 128; pat++) {
 		if (buf[pat * 2] == 0xff)
 			break;
@@ -84,7 +84,7 @@ static int depack_titanics(FILE *in, FILE *out)
 		if (j > max)
 			max = j;
 	}
-	fwrite(buf, 128, 1, out);
+	xmp_fwrite(buf, 128, 1, out);
 	write32b(out, PW_MOD_MAGIC);	/* write M.K. */
 
 	/* pattern data */
@@ -92,7 +92,7 @@ static int depack_titanics(FILE *in, FILE *out)
 		uint8 x, y, c;
 		int note;
 
-		fseek(in, pat_addr_final[i], SEEK_SET);
+		xmp_fseek(in, pat_addr_final[i], SEEK_SET);
 
 		memset(buf, 0, 1024);
 		x = read8(in);
@@ -118,13 +118,13 @@ static int depack_titanics(FILE *in, FILE *out)
 			k += x & 0x7f;
 		}
 
-		fwrite(&buf[0], 1024, 1, out);
+		xmp_fwrite(&buf[0], 1024, 1, out);
 	}
 
 	/* sample data */
 	for (i = 0; i < 15; i++) {
 		if (smp_addr[i]) {
-			fseek(in, smp_addr[i], SEEK_SET);
+			xmp_fseek(in, smp_addr[i], SEEK_SET);
 			pw_move_data(out, in, smp_size[i]);
 		}
 	}

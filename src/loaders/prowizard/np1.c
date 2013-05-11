@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_np1(FILE *in, FILE *out)
+static int depack_np1(xmp_file in, xmp_file out)
 {
 	uint8 tmp[1024];
 	uint8 c1, c2, c3, c4;
@@ -58,7 +58,7 @@ static int depack_np1(FILE *in, FILE *out)
 	memset(tmp, 0, 30);
 	tmp[29] = 0x01;
 	for (; i < 31; i++)
-		fwrite(tmp, 30, 1, out);
+		xmp_fwrite(tmp, 30, 1, out);
 
 	write8(out, len);		/* write size of pattern list */
 	write8(out, 0x7f);		/* write noisetracker byte */
@@ -75,7 +75,7 @@ static int depack_np1(FILE *in, FILE *out)
 	}
 	npat++;
 
-	fwrite(ptable, 128, 1, out);		/* write pattern table */
+	xmp_fwrite(ptable, 128, 1, out);		/* write pattern table */
 	write32b(out, PW_MOD_MAGIC);		/* write ptk ID */
 
 	/* read tracks addresses per pattern */
@@ -90,13 +90,13 @@ static int depack_np1(FILE *in, FILE *out)
 		if ((taddr[i][3] = read16b(in)) > max_addr)
 			max_addr = taddr[i][3];
 	}
-	tdata = ftell(in);
+	tdata = xmp_ftell(in);
 
 	/* the track data now ... */
 	for (i = 0; i < npat; i++) {
 		memset(tmp, 0, 1024);
 		for (j = 0; j < 4; j++) {
-			fseek(in, tdata + taddr[i][3 - j], 0);
+			xmp_fseek(in, tdata + taddr[i][3 - j], 0);
 			for (k = 0; k < 64; k++) {
 				int x = k * 16 + j * 4;
 
@@ -129,11 +129,11 @@ static int depack_np1(FILE *in, FILE *out)
 				tmp[x + 3] = c3;
 			}
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* sample data */
-	fseek(in, max_addr + 192 + tdata, 0);
+	xmp_fseek(in, max_addr + 192 + tdata, 0);
 	pw_move_data(out, in, ssize);
 
 	return 0;

@@ -10,8 +10,8 @@
 #include "mod.h"
 #include "period.h"
 
-static int flt_test (FILE *, char *, const int);
-static int flt_load (struct module_data *, FILE *, const int);
+static int flt_test (xmp_file, char *, const int);
+static int flt_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader flt_loader = {
     "Startrekker (MOD)",
@@ -19,12 +19,12 @@ const struct format_loader flt_loader = {
     flt_load
 };
 
-static int flt_test(FILE *f, char *t, const int start)
+static int flt_test(xmp_file f, char *t, const int start)
 {
     char buf[4];
 
-    fseek(f, start + 1080, SEEK_SET);
-    if (fread(buf, 1, 4, f) < 4)
+    xmp_fseek(f, start + 1080, SEEK_SET);
+    if (xmp_fread(buf, 1, 4, f) < 4)
 	return -1;
 
     /* Also RASP? */
@@ -34,7 +34,7 @@ static int flt_test(FILE *f, char *t, const int start)
     if (buf[3] != '4' && buf[3] != '8' && buf[3] != 'M')
 	return -1;
 
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 20);
 
     return 0;
@@ -84,18 +84,18 @@ struct am_instrument {
 
 
 
-static int is_am_instrument(FILE *nt, int i)
+static int is_am_instrument(xmp_file nt, int i)
 {
     char buf[2];
     int16 wf;
 
-    fseek(nt, 144 + i * 120, SEEK_SET);
-    if (fread(buf, 1, 2, nt) < 2)
+    xmp_fseek(nt, 144 + i * 120, SEEK_SET);
+    if (xmp_fread(buf, 1, 2, nt) < 2)
 	return 0;
     if (memcmp(buf, "AM", 2))
 	return 0;
 
-    fseek(nt, 24, SEEK_CUR);
+    xmp_fseek(nt, 24, SEEK_CUR);
     wf = read16b(nt);
     if (wf < 0 || wf > 3)
 	return 0;
@@ -103,7 +103,7 @@ static int is_am_instrument(FILE *nt, int i)
     return 1;
 }
 
-static void read_am_instrument(struct module_data *m, FILE *nt, int i)
+static void read_am_instrument(struct module_data *m, xmp_file nt, int i)
 {
     struct xmp_module *mod = &m->mod;
     struct am_instrument am;
@@ -111,7 +111,7 @@ static void read_am_instrument(struct module_data *m, FILE *nt, int i)
     int a, b;
     int8 am_noise[1024];
 
-    fseek(nt, 144 + i * 120 + 2 + 4, SEEK_SET);
+    xmp_fseek(nt, 144 + i * 120 + 2 + 4, SEEK_SET);
     am.l0 = read16b(nt);
     am.a1l = read16b(nt);
     am.a1s = read16b(nt);
@@ -266,7 +266,7 @@ am.l0, am.a1l, am.a1s, am.a2l, am.a2s, am.sl, am.ds, am.st, am.rs, am.wf);
 }
 
 
-static int flt_load(struct module_data *m, FILE *f, const int start)
+static int flt_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -276,7 +276,7 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
     char *tracker;
     char filename[1024];
     char buf[16];
-    FILE *nt;
+    xmp_file nt;
     int am_synth;
 
     LOAD_INIT();
@@ -284,13 +284,13 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
     /* See if we have the synth parameters file */
     am_synth = 0;
     snprintf(filename, 1024, "%s%s.NT", m->dirname, m->basename);
-    if ((nt = fopen(filename, "rb")) == NULL) {
+    if ((nt = xmp_fopen(filename, "rb")) == NULL) {
 	snprintf(filename, 1024, "%s%s.nt", m->dirname, m->basename);
-	if ((nt = fopen(filename, "rb")) == NULL) {
+	if ((nt = xmp_fopen(filename, "rb")) == NULL) {
 	    snprintf(filename, 1024, "%s%s.AS", m->dirname, m->basename);
-	    if ((nt = fopen(filename, "rb")) == NULL) {
+	    if ((nt = xmp_fopen(filename, "rb")) == NULL) {
 	        snprintf(filename, 1024, "%s%s.as", m->dirname, m->basename);
-	        nt = fopen(filename, "rb");
+	        nt = xmp_fopen(filename, "rb");
 	    }
 	}
     }
@@ -298,7 +298,7 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
     tracker = "Startrekker";
 
     if (nt) {
-	fread(buf, 1, 16, nt);
+	xmp_fread(buf, 1, 16, nt);
 	if (memcmp(buf, "ST1.2 ModuleINFO", 16) == 0) {
 	    am_synth = 1;
 	    tracker = "Startrekker 1.2";
@@ -311,9 +311,9 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
 	}
     }
 
-    fread(&mh.name, 20, 1, f);
+    xmp_fread(&mh.name, 20, 1, f);
     for (i = 0; i < 31; i++) {
-	fread(&mh.ins[i].name, 22, 1, f);	/* Instrument name */
+	xmp_fread(&mh.ins[i].name, 22, 1, f);	/* Instrument name */
 	mh.ins[i].size = read16b(f);		/* Length in 16-bit words */
 	mh.ins[i].finetune = read8(f);		/* Finetune (signed nibble) */
 	mh.ins[i].volume = read8(f);		/* Linear playback volume */
@@ -322,8 +322,8 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
     }
     mh.len = read8(f);
     mh.restart = read8(f);
-    fread(&mh.order, 128, 1, f);
-    fread(&mh.magic, 4, 1, f);
+    xmp_fread(&mh.order, 128, 1, f);
+    xmp_fread(&mh.magic, 4, 1, f);
 
     if (mh.magic[3] == '4')
 	mod->chn = 4;
@@ -401,13 +401,13 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
 	TRACK_ALLOC(i);
 	for (j = 0; j < (64 * 4); j++) {
 	    event = &EVENT(i, j % 4, j / 4);
-	    fread(mod_event, 1, 4, f);
+	    xmp_fread(mod_event, 1, 4, f);
 	    cvt_pt_event(event, mod_event);
 	}
 	if (mod->chn > 4) {
 	    for (j = 0; j < (64 * 4); j++) {
 		event = &EVENT(i, (j % 4) + 4, j / 4);
-		fread(mod_event, 1, 4, f);
+		xmp_fread(mod_event, 1, 4, f);
 		cvt_pt_event(event, mod_event);
 
 		/* no macros */
@@ -437,7 +437,7 @@ static int flt_load(struct module_data *m, FILE *f, const int start)
     }
 
     if (nt)
-	fclose(nt);
+    xmp_fclose(nt);
 
     return 0;
 }

@@ -17,7 +17,7 @@
 #include "prowiz.h"
 
 
-static int depack_p61a(FILE *in, FILE *out)
+static int depack_p61a(xmp_file in, xmp_file out)
 {
     uint8 c1, c2, c3, c4, c5, c6;
     long max_row;
@@ -117,7 +117,7 @@ static int depack_p61a(FILE *in, FILE *out)
     memset(tmp, 0, 30);
     tmp[29] = 0x01;
     for (; i < 31; i++)
-	fwrite(tmp, 30, 1, out);
+	xmp_fwrite(tmp, 30, 1, out);
 
     /* read tracks addresses per pattern */
     for (i = 0; i < npat; i++) {
@@ -135,16 +135,16 @@ static int depack_p61a(FILE *in, FILE *out)
 
     write8(out, len);			/* write size of pattern list */
     write8(out, 0x7f);			/* write noisetracker byte */
-    fwrite(ptable, 128, 1, out);	/* write pattern table */
+    xmp_fwrite(ptable, 128, 1, out);	/* write pattern table */
     write32b(out, PW_MOD_MAGIC);	/* write ptk ID */
 
-    tdata_addr = ftell(in);
+    tdata_addr = xmp_ftell(in);
 
     /* rewrite the track data */
     for (i = 0; i < npat; i++) {
 	max_row = 63;
 	for (j = 0; j < 4; j++) {
-	    fseek(in, taddr[i][j] + tdata_addr, SEEK_SET);
+	    xmp_fseek(in, taddr[i][j] + tdata_addr, SEEK_SET);
 	    for (k = 0; k <= max_row; k++) {
 		uint8 *x = &tdata[i * 4 + j][k * 4];
 		c1 = read8(in);
@@ -284,10 +284,10 @@ static int depack_p61a(FILE *in, FILE *out)
 			c4 = read8(in);
 	                z = (c3 << 8) + c4;
 	            }
-	            a = ftell(in);
+	            a = xmp_ftell(in);
 	            c5 = c2;
 
-	            fseek(in, -z, SEEK_CUR);
+	            xmp_fseek(in, -z, SEEK_CUR);
 
 	            for (l = 0; l <= c5 && k <= max_row; l++, k++) {
 			c1 = read8(in);
@@ -438,7 +438,7 @@ static int depack_p61a(FILE *in, FILE *out)
 	                    c3 = c3 > 0x7f ? (0x100 - c3) << 4 : c3;
 	                *x++ = c3;
 	            }
-	            fseek(in, a, SEEK_SET);
+	            xmp_fseek(in, a, SEEK_SET);
 	            k -= 1;
 	            continue;
 	        }
@@ -479,20 +479,20 @@ static int depack_p61a(FILE *in, FILE *out)
 	    for (k = 0; k < 4; k++)
 		memcpy(&tmp[j * 16 + k * 4], &tdata[k + i * 4][j * 4], 4);
 	}
-	fwrite (tmp, 1024, 1, out);
+	xmp_fwrite (tmp, 1024, 1, out);
     }
 
     /* go to sample data address */
-    fseek (in, sdata_addr, 0);
+    xmp_fseek (in, sdata_addr, 0);
 
     /* read and write sample data */
 
     /*printf ( "writing sample data ... " ); */
     for (i = 0; i < nins; i++) {
-	fseek(in, sdata_addr + saddr[i], 0);
+	xmp_fseek(in, sdata_addr + saddr[i], 0);
 	smp_buffer = malloc(smp_size[i]);
 	memset(smp_buffer, 0, smp_size[i]);
-	fread(smp_buffer, smp_size[i], 1, in);
+	xmp_fread(smp_buffer, smp_size[i], 1, in);
 	if (use_delta == 1) {
 	    c1 = 0;
 	    for (j = 1; j < smp_size[i]; j++) {
@@ -503,7 +503,7 @@ static int depack_p61a(FILE *in, FILE *out)
 	        c1 = c3;
 	    }
 	}
-	fwrite(smp_buffer, smp_size[i], 1, out);
+	xmp_fwrite(smp_buffer, smp_size[i], 1, out);
 	free(smp_buffer);
     }
 

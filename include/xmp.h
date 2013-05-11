@@ -5,11 +5,11 @@
 extern "C" {
 #endif
 
-#define XMP_VERSION "4.1.3"
-#define XMP_VERCODE 0x040103
-#define XMP_VER_MAJOR 4
-#define XMP_VER_MINOR 1
-#define XMP_VER_RELEASE 3
+#define XMP_VERSION "999.0"
+#define XMP_VERCODE 0x3e70000
+#define XMP_VER_MAJOR 999
+#define XMP_VER_MINOR 0
+#define XMP_VER_RELEASE 0
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 # ifdef BUILDING_DLL
@@ -272,14 +272,31 @@ struct xmp_frame_info {			/* Current frame information */
 
 
 typedef char *xmp_context;
+struct xmp_file_t;
+typedef struct xmp_file_t *xmp_file;
 
 EXPORT extern const char *xmp_version;
 EXPORT extern const unsigned int xmp_vercode;
 
+EXPORT xmp_file    xmp_fopen           (const char *, const char *);
+EXPORT xmp_file    xmp_fopen_mem       (const void *data, unsigned int);
+EXPORT void        xmp_fclose          (xmp_file);
+EXPORT int         xmp_fwrite          (const void *, unsigned int, unsigned int, xmp_file);
+EXPORT int         xmp_fread           (void *, unsigned int, unsigned int, xmp_file);
+EXPORT int         xmp_fsize           (xmp_file);
+EXPORT int         xmp_ftell           (xmp_file);
+EXPORT int         xmp_fseek           (xmp_file, int, int);
+EXPORT int         xmp_feof            (xmp_file);
+EXPORT int         xmp_fputc           (int, xmp_file);
+EXPORT int         xmp_fgetc           (xmp_file);
+EXPORT int         xmp_fungetc         (int, xmp_file);
+
 EXPORT xmp_context xmp_create_context  (void);
 EXPORT void        xmp_free_context    (xmp_context);
 EXPORT int         xmp_test_module     (char *, struct xmp_test_info *);
+EXPORT int         xmp_test_module_f   (xmp_file, struct xmp_test_info *);
 EXPORT int         xmp_load_module     (xmp_context, char *);
+EXPORT int         xmp_load_module_f   (xmp_context, xmp_file, char *);
 EXPORT void        xmp_scan_module     (xmp_context);
 EXPORT void        xmp_release_module  (xmp_context);
 EXPORT int         xmp_start_player    (xmp_context, int, int);

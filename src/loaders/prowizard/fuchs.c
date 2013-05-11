@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_fuchs(FILE *in, FILE *out)
+static int depack_fuchs(xmp_file in, xmp_file out)
 {
 	uint8 *tmp;
 	uint8 c1;
@@ -24,32 +24,32 @@ static int depack_fuchs(FILE *in, FILE *out)
 	memset(LoopStart, 0, 16 * 4);
 
 	pw_write_zero(out, 1080);		/* write ptk header */
-	fseek(out, 0, SEEK_SET);
+	xmp_fseek(out, 0, SEEK_SET);
 	pw_move_data(out, in, 10);		/* read/write title */
 	ssize = read32b(in);			/* read all sample data size */
 
 	/* read/write sample sizes */
 	for (i = 0; i < 16; i++) {
-		fseek(out, 42 + i * 30, SEEK_SET);
+		xmp_fseek(out, 42 + i * 30, SEEK_SET);
 		write16b(out, (SampleSizes[i] = read16b(in)) / 2);
 	}
 
 	/* read/write volumes */
 	for (i = 0; i < 16; i++) {
-		fseek(out, 45 + i * 30, SEEK_SET);
-		fseek(in, 1, SEEK_CUR);
+		xmp_fseek(out, 45 + i * 30, SEEK_SET);
+		xmp_fseek(in, 1, SEEK_CUR);
 		write8(out, read8(in));
 	}
 
 	/* read/write loop start */
 	for (i = 0; i < 16; i++) {
-		fseek(out, 46 + i * 30, SEEK_SET);
+		xmp_fseek(out, 46 + i * 30, SEEK_SET);
 		write8(out, (LoopStart[i] = read16b(in)) / 2);
 	}
 
 	/* write replen */
 	for (i = 0; i < 16; i++) {
-		fseek(out, 48 + i * 30, SEEK_SET);
+		xmp_fseek(out, 48 + i * 30, SEEK_SET);
 		j = SampleSizes[i] - LoopStart[i];
 		if ((j == 0) || (LoopStart[i] == 0))
 			write16b(out, 0x0001);
@@ -59,7 +59,7 @@ static int depack_fuchs(FILE *in, FILE *out)
 
 	/* fill replens up to 31st sample wiz $0001 */
 	for (i = 16; i < 31; i++) {
-		fseek(out, 48 + i * 30, SEEK_SET);
+		xmp_fseek(out, 48 + i * 30, SEEK_SET);
 		write16b(out, 0x0001);
 	}
 
@@ -67,9 +67,9 @@ static int depack_fuchs(FILE *in, FILE *out)
 	/* now, the pattern list */
 
 	/* read number of pattern to play */
-	fseek(out, 950, SEEK_SET);
+	xmp_fseek(out, 950, SEEK_SET);
 	/* bypass empty byte (saved wiz a WORD ..) */
-	fseek(in, 1, SEEK_CUR);
+	xmp_fseek(in, 1, SEEK_CUR);
 	write8(out, read8(in));
 
 	/* write ntk byte */
@@ -77,27 +77,27 @@ static int depack_fuchs(FILE *in, FILE *out)
 
 	/* read/write pattern list */
 	for (pmax = i = 0; i < 40; i++) {
-		fseek(in, 1, SEEK_CUR);
+		xmp_fseek(in, 1, SEEK_CUR);
 		write8(out, c1 = read8(in));
 		if (c1 > pmax)
 			pmax = c1;
 	}
 
 	/* write ptk's ID */
-	fseek(out, 0, SEEK_END);
+	xmp_fseek(out, 0, SEEK_END);
 	write32b(out, PW_MOD_MAGIC);
 
 	/* now, the pattern data */
 
 	/* bypass the "SONG" ID */
-	fseek(in, 4, 1);
+	xmp_fseek(in, 4, 1);
 
 	/* read pattern data size */
 	j = read32b(in);
 
 	/* read pattern data */
 	tmp = (uint8 *)malloc(j);
-	fread(tmp, j, 1, in);
+	xmp_fread(tmp, j, 1, in);
 
 	/* convert shits */
 	for (i = 0; i < j; i += 4) {
@@ -136,11 +136,11 @@ static int depack_fuchs(FILE *in, FILE *out)
 	}
 
 	/* write pattern data */
-	fwrite(tmp, j, 1, out);
+	xmp_fwrite(tmp, j, 1, out);
 	free(tmp);
 
 	/* read/write sample data */
-	fseek (in, 4, SEEK_CUR);	/* bypass "INST" Id */
+	xmp_fseek (in, 4, SEEK_CUR);	/* bypass "INST" Id */
 	for (i = 0; i < 16; i++) {
 		if (SampleSizes[i] != 0)
 			pw_move_data(out, in, SampleSizes[i]);

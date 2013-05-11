@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_di(FILE * in, FILE * out)
+static int depack_di(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3;
 	uint8 note, ins, fxt, fxp;
@@ -47,10 +47,10 @@ static int depack_di(FILE * in, FILE * out)
 
 	memset(tmp, 0, 50);
 	for (i = nins; i < 31; i++)
-		fwrite(tmp, 30, 1, out);
+		xmp_fwrite(tmp, 30, 1, out);
 
-	pos = ftell(in);
-	fseek (in, seq_offs, 0);
+	pos = xmp_ftell(in);
+	xmp_fseek (in, seq_offs, 0);
 
 	i = 0;
 	do {
@@ -71,12 +71,12 @@ static int depack_di(FILE * in, FILE * out)
 
 	write32b(out, PW_MOD_MAGIC);
 
-	fseek(in, pos, 0);
+	xmp_fseek(in, pos, 0);
 	for (i = 0; i <= max; i++)
 		paddr[i] = read16b(in);
 
 	for (i = 0; i <= max; i++) {
-		fseek(in, paddr[i], 0);
+		xmp_fseek(in, paddr[i], 0);
 		for (k = 0; k < 256; k++) {	/* 256 = 4 voices * 64 rows */
 			memset(ptk_tab, 0, 5);
 			c1 = read8(in);
@@ -92,12 +92,12 @@ static int depack_di(FILE * in, FILE * out)
 				ptk_tab[2] |= fxt;
 				fxp = 0x00;
 				ptk_tab[3] = fxp;
-				fwrite (ptk_tab, 4, 1, out);
+				xmp_fwrite (ptk_tab, 4, 1, out);
 				continue;
 			}
 			if (c1 == 0xff) {
 				memset(ptk_tab, 0, 5);
-				fwrite (ptk_tab, 4, 1, out);
+				xmp_fwrite (ptk_tab, 4, 1, out);
 				continue;
 			}
 			c2 = read8(in);
@@ -112,11 +112,11 @@ static int depack_di(FILE * in, FILE * out)
 			ptk_tab[2] |= fxt;
 			fxp = c3;
 			ptk_tab[3] = fxp;
-			fwrite(ptk_tab, 4, 1, out);
+			xmp_fwrite(ptk_tab, 4, 1, out);
 		}
 	}
 
-	fseek(in, smp_offs, 0);
+	xmp_fseek(in, smp_offs, 0);
 	pw_move_data(out, in, ssize);
 
 	return 0;

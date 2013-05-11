@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_pru1 (FILE *in, FILE *out)
+static int depack_pru1 (xmp_file in, xmp_file out)
 {
 	uint8 header[2048];
 	uint8 c1, c2, c3, c4;
@@ -23,8 +23,8 @@ static int depack_pru1 (FILE *in, FILE *out)
 	memset(ptable, 0, 128);
 
 	/* read and write whole header */
-	fread(header, 950, 1, in);
-	fwrite(header, 950, 1, out);
+	xmp_fread(header, 950, 1, in);
+	xmp_fwrite(header, 950, 1, out);
 
 	/* get whole sample size */
 	for (i = 0; i < 31; i++) {
@@ -37,8 +37,8 @@ static int depack_pru1 (FILE *in, FILE *out)
 	memset(header, 0, 2048);
 
 	/* read and write ntk byte and pattern list */
-	fread(header, 129, 1, in);
-	fwrite(header, 129, 1, out);
+	xmp_fread(header, 129, 1, in);
+	xmp_fwrite(header, 129, 1, out);
 
 	/* write ID */
 	write32b(out, PW_MOD_MAGIC);
@@ -51,7 +51,7 @@ static int depack_pru1 (FILE *in, FILE *out)
 	}
 
 	/* pattern data */
-	fseek (in, 1084, SEEK_SET);
+	xmp_fseek (in, 1084, SEEK_SET);
 	for (i = 0; i <= max; i++) {
 		for (j = 0; j < 256; j++) {
 			header[0] = read8(in);

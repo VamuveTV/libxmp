@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "xmp.h"
 
 #define	MAGIC_1		31	/* First byte of compressed file */
 #define	MAGIC_2		157	/* Second byte of compressed file */
@@ -46,7 +47,7 @@ typedef long int cmp_code_int;
  * with those of the compress() routine.  See the definitions above.
  */
 
-int decrunch_compress(FILE * in, FILE * out)
+int decrunch_compress(xmp_file in, xmp_file out)
 {
 	char_type *stackp;
 	code_int code;
@@ -78,7 +79,7 @@ int decrunch_compress(FILE * in, FILE * out)
 	bytes_out = 0;
 	insize = 0;
 
-	rsize = fread(inbuf, 1, IBUFSIZ, in);
+	rsize = xmp_fread(inbuf, 1, IBUFSIZ, in);
 	insize += rsize;
 
 	if (insize < 3 || inbuf[0] != MAGIC_1 || inbuf[1] != MAGIC_2) {
@@ -131,7 +132,7 @@ int decrunch_compress(FILE * in, FILE * out)
 		}
 
 		if (insize < sizeof(inbuf) - IBUFSIZ) {
-			if ((rsize = fread(inbuf + insize, 1, IBUFSIZ, in)) < 0)
+			if ((rsize = xmp_fread(inbuf + insize, 1, IBUFSIZ, in)) < 0)
 				return -1;
 
 			insize += rsize;
@@ -227,7 +228,7 @@ int decrunch_compress(FILE * in, FILE * out)
 					}
 
 					if (outpos >= OBUFSIZ) {
-						if (fwrite(outbuf, 1, outpos, out) != outpos) {
+						if (xmp_fwrite(outbuf, 1, outpos, out) != outpos) {
 							return -1;
 							/*write_error(); */
 						}
@@ -255,7 +256,7 @@ int decrunch_compress(FILE * in, FILE * out)
 	}
 	while (rsize > 0);
 
-	if (outpos > 0 && fwrite(outbuf, 1, outpos, out) != outpos)
+	if (outpos > 0 && xmp_fwrite(outbuf, 1, outpos, out) != outpos)
 		return -1;
 
 	return 0;

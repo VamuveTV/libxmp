@@ -19,8 +19,8 @@
 #define MAGIC_GMFS	MAGIC4('G','M','F','S')
 
 
-static int gdm_test(FILE *, char *, const int);
-static int gdm_load (struct module_data *, FILE *, const int);
+static int gdm_test(xmp_file, char *, const int);
+static int gdm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader gdm_loader = {
 	"Generic Digital Music (GDM)",
@@ -28,16 +28,16 @@ const struct format_loader gdm_loader = {
 	gdm_load
 };
 
-static int gdm_test(FILE *f, char *t, const int start)
+static int gdm_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_GDM)
 		return -1;
 
-	fseek(f, start + 0x47, SEEK_SET);
+	xmp_fseek(f, start + 0x47, SEEK_SET);
 	if (read32b(f) != MAGIC_GMFS)
 		return -1;
 
-	fseek(f, start + 4, SEEK_SET);
+	xmp_fseek(f, start + 4, SEEK_SET);
 	read_title(f, t, 32);
 
 	return 0;
@@ -97,7 +97,7 @@ void fix_effect(uint8 *fxt, uint8 *fxp)
 }
 
 
-static int gdm_load(struct module_data *m, FILE *f, const int start)
+static int gdm_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -109,10 +109,10 @@ static int gdm_load(struct module_data *m, FILE *f, const int start)
 	LOAD_INIT();
 
 	read32b(f);		/* skip magic */
-	fread(mod->name, 1, 32, f);
-	fseek(f, 32, SEEK_CUR);	/* skip author */
+	xmp_fread(mod->name, 1, 32, f);
+	xmp_fseek(f, 32, SEEK_CUR);	/* skip author */
 
-	fseek(f, 7, SEEK_CUR);
+	xmp_fseek(f, 7, SEEK_CUR);
 
 	vermaj = read8(f);
 	vermin = read8(f);
@@ -128,7 +128,7 @@ static int gdm_load(struct module_data *m, FILE *f, const int start)
 					vermaj, vermin, tvmaj, tvmin);
 	}
 
-	fread(panmap, 32, 1, f);
+	xmp_fread(panmap, 32, 1, f);
 	for (i = 0; i < 32; i++) {
 		if (panmap[i] != 0xff)
 			mod->chn = i + 1;
@@ -152,14 +152,14 @@ static int gdm_load(struct module_data *m, FILE *f, const int start)
 	
 	MODULE_INFO();
 
-	fseek(f, start + ord_ofs, SEEK_SET);
+	xmp_fseek(f, start + ord_ofs, SEEK_SET);
 
 	for (i = 0; i < mod->len; i++)
 		mod->xxo[i] = read8(f);
 
 	/* Read instrument data */
 
-	fseek(f, start + ins_ofs, SEEK_SET);
+	xmp_fseek(f, start + ins_ofs, SEEK_SET);
 
 	INSTRUMENT_INIT();
 
@@ -167,9 +167,9 @@ static int gdm_load(struct module_data *m, FILE *f, const int start)
 		int flg, c4spd, vol, pan;
 
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-		fread(buffer, 32, 1, f);
+		xmp_fread(buffer, 32, 1, f);
 		copy_adjust(mod->xxi[i].name, buffer, 32);
-		fseek(f, 12, SEEK_CUR);		/* skip filename */
+		xmp_fseek(f, 12, SEEK_CUR);		/* skip filename */
 		read8(f);			/* skip EMS handle */
 		mod->xxs[i].len = read32l(f);
 		mod->xxs[i].lps = read32l(f);
@@ -211,7 +211,7 @@ static int gdm_load(struct module_data *m, FILE *f, const int start)
 
 	/* Read and convert patterns */
 
-	fseek(f, start + pat_ofs, SEEK_SET);
+	xmp_fseek(f, start + pat_ofs, SEEK_SET);
 
 	PATTERN_INIT();
 
@@ -274,7 +274,7 @@ static int gdm_load(struct module_data *m, FILE *f, const int start)
 
 	/* Read samples */
 
-	fseek(f, start + smp_ofs, SEEK_SET);
+	xmp_fseek(f, start + smp_ofs, SEEK_SET);
 
 	D_(D_INFO "Stored samples: %d", mod->smp);
 

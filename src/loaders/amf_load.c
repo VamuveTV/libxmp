@@ -19,8 +19,8 @@
 #include "period.h"
 
 
-static int amf_test(FILE *, char *, const int);
-static int amf_load (struct module_data *, FILE *, const int);
+static int amf_test(xmp_file, char *, const int);
+static int amf_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader amf_loader = {
 	"DSMI Advanced Module Format (AMF)",
@@ -28,12 +28,12 @@ const struct format_loader amf_loader = {
 	amf_load
 };
 
-static int amf_test(FILE * f, char *t, const int start)
+static int amf_test(xmp_file f, char *t, const int start)
 {
 	char buf[4];
 	int ver;
 
-	if (fread(buf, 1, 3, f) < 3)
+	if (xmp_fread(buf, 1, 3, f) < 3)
 		return -1;
 
 	if (buf[0] != 'A' || buf[1] != 'M' || buf[2] != 'F')
@@ -49,7 +49,7 @@ static int amf_test(FILE * f, char *t, const int start)
 }
 
 
-static int amf_load(struct module_data *m, FILE *f, const int start)
+static int amf_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j;
@@ -60,10 +60,10 @@ static int amf_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fread(buf, 1, 3, f);
+	xmp_fread(buf, 1, 3, f);
 	ver = read8(f);
 
-	fread(buf, 1, 32, f);
+	xmp_fread(buf, 1, 32, f);
 	strncpy(mod->name, (char *)buf, 32);
 	set_type(m, "DSMI %d.%d AMF", ver / 10, ver % 10);
 
@@ -76,17 +76,17 @@ static int amf_load(struct module_data *m, FILE *f, const int start)
 	mod->pat = mod->len;
 
 	if (ver == 0x0a)
-		fread(buf, 1, 16, f);		/* channel remap table */
+		xmp_fread(buf, 1, 16, f);		/* channel remap table */
 
 	if (ver >= 0x0d) {
-		fread(buf, 1, 32, f);		/* panning table */
+		xmp_fread(buf, 1, 32, f);		/* panning table */
 		for (i = 0; i < 32; i++) {
 			mod->xxc->pan = 0x80 + 2 * (int8)buf[i];
 		}
 		mod->bpm = read8(f);
 		mod->spd = read8(f);
 	} else if (ver >= 0x0b) {
-		fread(buf, 1, 16, f);
+		xmp_fread(buf, 1, 16, f);
 	}
 
 	MODULE_INFO();
@@ -130,14 +130,14 @@ static int amf_load(struct module_data *m, FILE *f, const int start)
 	if (ver <= 0x0a) {
 		uint8 b;
 		int len, start, end;
-		long pos = ftell(f);
+		long pos = xmp_ftell(f);
 		for (i = 0; i < mod->ins; i++) {
 			b = read8(f);
 			if (b != 0 && b != 1) {
 				ver = 0x09;
 				break;
 			}
-			fseek(f, 32 + 13, SEEK_CUR);
+			xmp_fseek(f, 32 + 13, SEEK_CUR);
 			if (read32l(f) > 0x100000) {	/* check index */
 				ver = 0x09;
 				break;
@@ -166,7 +166,7 @@ static int amf_load(struct module_data *m, FILE *f, const int start)
 				break;
 			}
 		}
-		fseek(f, pos, SEEK_SET);
+		xmp_fseek(f, pos, SEEK_SET);
 	}
 
 	for (i = 0; i < mod->ins; i++) {
@@ -178,10 +178,10 @@ static int amf_load(struct module_data *m, FILE *f, const int start)
 		b = read8(f);
 		mod->xxi[i].nsm = b ? 1 : 0;
 
-		fread(buf, 1, 32, f);
+		xmp_fread(buf, 1, 32, f);
 		copy_adjust(mod->xxi[i].name, buf, 32);
 
-		fread(buf, 1, 13, f);	/* sample name */
+		xmp_fread(buf, 1, 13, f);	/* sample name */
 		read32l(f);		/* sample index */
 
 		mod->xxi[i].sub[0].sid = i;

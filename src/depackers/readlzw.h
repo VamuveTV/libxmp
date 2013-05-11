@@ -28,6 +28,6 @@ unsigned char *convert_lzw_dynamic(unsigned char *data_in,
                                           unsigned long orig_len,
 					  int q);
 
-uint8 *read_lzw_dynamic(FILE *f, uint8 *buf, int max_bits,int use_rle,
+uint8 *read_lzw_dynamic(xmp_file f, uint8 *buf, int max_bits,int use_rle,
                         unsigned long in_len, unsigned long orig_len, int q);
 

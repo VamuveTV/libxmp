@@ -20,7 +20,7 @@ struct xm_instrument {
 	uint8 buf[36];
 };
 
-int test_oxm(FILE *f)
+int test_oxm(xmp_file f)
 {
 	int i, j;
 	int hlen, npat, len, plen;
@@ -29,36 +29,36 @@ int test_oxm(FILE *f)
 	int slen[256];
 	uint8 buf[1024];
 
-	fseek(f, 0, SEEK_SET);
-	if (fread(buf, 1, 16, f) < 16)
+	xmp_fseek(f, 0, SEEK_SET);
+	if (xmp_fread(buf, 1, 16, f) < 16)
 		return -1;
 	if (memcmp(buf, "Extended Module:", 16))
 		return -1;
 	
-	fseek(f, 60, SEEK_SET);
+	xmp_fseek(f, 60, SEEK_SET);
 	hlen = read32l(f);
-	fseek(f, 6, SEEK_CUR);
+	xmp_fseek(f, 6, SEEK_CUR);
 	npat = read16l(f);
 	nins = read16l(f);
 
 	if (npat > 256 || nins > 128)
 		return -1;
 	
-	fseek(f, 60 + hlen, SEEK_SET);
+	xmp_fseek(f, 60 + hlen, SEEK_SET);
 
 	for (i = 0; i < npat; i++) {
 		len = read32l(f);
-		fseek(f, 3, SEEK_CUR);
+		xmp_fseek(f, 3, SEEK_CUR);
 		plen = read16l(f);
-		fseek(f, len - 9 + plen, SEEK_CUR);
+		xmp_fseek(f, len - 9 + plen, SEEK_CUR);
 	}
 
 	for (i = 0; i < nins; i++) {
 		ilen = read32l(f);
 		if (ilen > 263)
 			return -1;
-		fseek(f, -4, SEEK_CUR);
-		fread(buf, ilen, 1, f);		/* instrument header */
+		xmp_fseek(f, -4, SEEK_CUR);
+		xmp_fread(buf, ilen, 1, f);		/* instrument header */
 		nsmp = readmem16l(buf + 27);
 
 		if (nsmp > 255)
@@ -69,7 +69,7 @@ int test_oxm(FILE *f)
 		/* Read instrument data */
 		for (j = 0; j < nsmp; j++) {
 			slen[j] = read32l(f);
-			fseek(f, 36, SEEK_CUR);
+			xmp_fseek(f, 36, SEEK_CUR);
 		}
 
 		/* Read samples */
@@ -77,14 +77,14 @@ int test_oxm(FILE *f)
 			read32b(f);
 			if (read32b(f) == MAGIC_OGGS)
 				return 0;
-			fseek(f, slen[j] - 8, SEEK_CUR);
+			xmp_fseek(f, slen[j] - 8, SEEK_CUR);
 		}
 	}
 
 	return -1;
 }
 
-static char *oggdec(FILE *f, int len, int res, int *newlen)
+static char *oggdec(xmp_file f, int len, int res, int *newlen)
 {
 	int i, n, ch;
 	int size;
@@ -94,13 +94,13 @@ static char *oggdec(FILE *f, int len, int res, int *newlen)
 
 	size = read32l(f);
 	id = read32b(f);
-	fseek(f, -8, SEEK_CUR);
+	xmp_fseek(f, -8, SEEK_CUR);
 
 	if ((data = calloc(1, len)) == NULL)
 		return NULL;
 
 	read32b(f);
-	fread(data, 1, len - 4, f);
+	xmp_fread(data, 1, len - 4, f);
 
 	if (id != MAGIC_OGGS) {		/* copy input data if not Ogg file */
 		*newlen = len;
@@ -142,7 +142,7 @@ static char *oggdec(FILE *f, int len, int res, int *newlen)
 	return (char *)pcm;
 }
 
-int decrunch_oxm(FILE *f, FILE *fo)
+int decrunch_oxm(xmp_file f, xmp_file fo)
 {
 	int i, j, pos;
 	int hlen, npat, len, plen;
@@ -153,33 +153,33 @@ int decrunch_oxm(FILE *f, FILE *fo)
 	char *pcm[256];
 	int newlen = 0;
 
-	fseek(f, 60, SEEK_SET);
+	xmp_fseek(f, 60, SEEK_SET);
 	hlen = read32l(f);
-	fseek(f, 6, SEEK_CUR);
+	xmp_fseek(f, 6, SEEK_CUR);
 	npat = read16l(f);
 	nins = read16l(f);
 	
-	fseek(f, 60 + hlen, SEEK_SET);
+	xmp_fseek(f, 60 + hlen, SEEK_SET);
 
 	for (i = 0; i < npat; i++) {
 		len = read32l(f);
-		fseek(f, 3, SEEK_CUR);
+		xmp_fseek(f, 3, SEEK_CUR);
 		plen = read16l(f);
-		fseek(f, len - 9 + plen, SEEK_CUR);
+		xmp_fseek(f, len - 9 + plen, SEEK_CUR);
 	}
 
-	pos = ftell(f);
-	fseek(f, 0, SEEK_SET);
+	pos = xmp_ftell(f);
+	xmp_fseek(f, 0, SEEK_SET);
 	move_data(fo, f, pos);			/* module header + patterns */
 
 	for (i = 0; i < nins; i++) {
 		ilen = read32l(f);
 		if (ilen > 1024)
 			return -1;
-		fseek(f, -4, SEEK_CUR);
-		fread(buf, ilen, 1, f);		/* instrument header */
+		xmp_fseek(f, -4, SEEK_CUR);
+		xmp_fread(buf, ilen, 1, f);		/* instrument header */
 		buf[26] = 0;
-		fwrite(buf, ilen, 1, fo);
+		xmp_fwrite(buf, ilen, 1, fo);
 		nsmp = readmem16l(buf + 27);
 
 		if (nsmp == 0)
@@ -188,7 +188,7 @@ int decrunch_oxm(FILE *f, FILE *fo)
 		/* Read sample headers */
 		for (j = 0; j < nsmp; j++) {
 			xi[j].len = read32l(f);
-			fread(xi[j].buf, 1, 36, f);
+			xmp_fread(xi[j].buf, 1, 36, f);
 		}
 
 		/* Read samples */
@@ -208,13 +208,13 @@ int decrunch_oxm(FILE *f, FILE *fo)
 		/* Write sample headers */
 		for (j = 0; j < nsmp; j++) {
 			write32l(fo, xi[j].len);
-			fwrite(xi[j].buf, 1, 36, fo);
+			xmp_fwrite(xi[j].buf, 1, 36, fo);
 		}
 
 		/* Write samples */
 		for (j = 0; j < nsmp; j++) {
 			if (xi[j].len > 0) {
-				fwrite(pcm[j], 1, xi[j].len, fo);
+				xmp_fwrite(pcm[j], 1, xi[j].len, fo);
 				free(pcm[j]);
 			}
 		}

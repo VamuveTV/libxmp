@@ -13,8 +13,8 @@
 #define MAGIC_Funk	MAGIC4('F','u','n','k')
 
 
-static int fnk_test (FILE *, char *, const int);
-static int fnk_load (struct module_data *, FILE *, const int);
+static int fnk_test (xmp_file, char *, const int);
+static int fnk_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader fnk_loader = {
     "Funktracker (FNK)",
@@ -22,11 +22,11 @@ const struct format_loader fnk_loader = {
     fnk_load
 };
 
-static int fnk_test(FILE *f, char *t, const int start)
+static int fnk_test(xmp_file f, char *t, const int start)
 {
     uint8 a, b;
     int size;
-    struct stat st;
+    int file_size;
 
     if (read32b(f) != MAGIC_Funk)
 	return -1;
@@ -46,8 +46,8 @@ static int fnk_test(FILE *f, char *t, const int start)
     if (size < 1024)
 	return -1;
 
-    fstat(fileno(f), &st);
-    if (size != st.st_size)
+    file_size = xmp_fsize(f);
+    if (size != file_size)
 	return -1;
 
     read_title(f, t, 0);
@@ -79,7 +79,7 @@ struct fnk_header {
 };
 
 
-static int fnk_load(struct module_data *m, FILE *f, const int start)
+static int fnk_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -90,16 +90,16 @@ static int fnk_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&ffh.marker, 4, 1, f);
-    fread(&ffh.info, 4, 1, f);
+    xmp_fread(&ffh.marker, 4, 1, f);
+    xmp_fread(&ffh.info, 4, 1, f);
     ffh.filesize = read32l(f);
-    fread(&ffh.fmt, 4, 1, f);
+    xmp_fread(&ffh.fmt, 4, 1, f);
     ffh.loop = read8(f);
-    fread(&ffh.order, 256, 1, f);
-    fread(&ffh.pbrk, 128, 1, f);
+    xmp_fread(&ffh.order, 256, 1, f);
+    xmp_fread(&ffh.pbrk, 128, 1, f);
 
     for (i = 0; i < 64; i++) {
-	fread(&ffh.fih[i].name, 19, 1, f);
+	xmp_fread(&ffh.fih[i].name, 19, 1, f);
 	ffh.fih[i].loop_start = read32l(f);
 	ffh.fih[i].length = read32l(f);
 	ffh.fih[i].volume = read8(f);
@@ -199,7 +199,7 @@ static int fnk_load(struct module_data *m, FILE *f, const int start)
 
 	for (j = 0; j < 64 * mod->chn; j++) {
 	    event = &EVENT(i, j % mod->chn, j / mod->chn);
-	    fread(&ev, 1, 3, f);
+	    xmp_fread(&ev, 1, 3, f);
 
 	    switch (ev[0] >> 2) {
 	    case 0x3f:

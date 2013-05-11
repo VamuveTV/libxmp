@@ -14,8 +14,8 @@
 #include "loader.h"
 #include "med_extras.h"
 
-static int mmd1_test(FILE *, char *, const int);
-static int mmd1_load (struct module_data *, FILE *, const int);
+static int mmd1_test(xmp_file, char *, const int);
+static int mmd1_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader mmd1_loader = {
 	"MED 2.10/OctaMED (MED)",
@@ -23,25 +23,25 @@ const struct format_loader mmd1_loader = {
 	mmd1_load
 };
 
-static int mmd1_test(FILE *f, char *t, const int start)
+static int mmd1_test(xmp_file f, char *t, const int start)
 {
 	char id[4];
 	uint32 offset, len;
 
-	if (fread(id, 1, 4, f) < 4)
+	if (xmp_fread(id, 1, 4, f) < 4)
 		return -1;
 
 	if (memcmp(id, "MMD0", 4) && memcmp(id, "MMD1", 4))
 		return -1;
 
-	fseek(f, 28, SEEK_CUR);
+	xmp_fseek(f, 28, SEEK_CUR);
 	offset = read32b(f);		/* expdata_offset */
 	
 	if (offset) {
-		fseek(f, start + offset + 44, SEEK_SET);
+		xmp_fseek(f, start + offset + 44, SEEK_SET);
 		offset = read32b(f);
 		len = read32b(f);
-		fseek(f, start + offset, SEEK_SET);
+		xmp_fseek(f, start + offset, SEEK_SET);
 		read_title(f, t, len);
 	} else {
 		read_title(f, t, 0);
@@ -51,7 +51,7 @@ static int mmd1_test(FILE *f, char *t, const int start)
 }
 
 
-static int mmd1_load(struct module_data *m, FILE *f, const int start)
+static int mmd1_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, k;
@@ -78,7 +78,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fread(&header.id, 4, 1, f);
+	xmp_fread(&header.id, 4, 1, f);
 
 	ver = *((char *)&header.id + 3) - '1' + 1;
 
@@ -109,7 +109,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 	 * song structure
 	 */
 	D_(D_WARN "load song");
-	fseek(f, start + song_offset, SEEK_SET);
+	xmp_fseek(f, start + song_offset, SEEK_SET);
 	for (i = 0; i < 63; i++) {
 		song.sample[i].rep = read16b(f);
 		song.sample[i].replen = read16b(f);
@@ -172,15 +172,15 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 	for (i = 0; i < mod->ins; i++) {
 		uint32 smpl_offset;
 		int16 type;
-		fseek(f, start + smplarr_offset + i * 4, SEEK_SET);
+		xmp_fseek(f, start + smplarr_offset + i * 4, SEEK_SET);
 		smpl_offset = read32b(f);
 		if (smpl_offset == 0)
 			continue;
-		fseek(f, start + smpl_offset, SEEK_SET);
+		xmp_fseek(f, start + smpl_offset, SEEK_SET);
 		read32b(f);				/* length */
 		type = read16b(f);
 		if (type == -1) {			/* type is synth? */
-			fseek(f, 14, SEEK_CUR);
+			xmp_fseek(f, 14, SEEK_CUR);
 			mod->smp += read16b(f);		/* wforms */
 		} else {
 			mod->smp++;
@@ -198,7 +198,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 	expsmp_offset = 0;
 	iinfo_offset = 0;
 	if (expdata_offset) {
-		fseek(f, start + expdata_offset, SEEK_SET);
+		xmp_fseek(f, start + expdata_offset, SEEK_SET);
 		read32b(f);
 		expsmp_offset = read32b(f);
 		D_(D_INFO "expsmp_offset = 0x%08x", expsmp_offset);
@@ -217,7 +217,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 		songname_offset = read32b(f);
 		D_(D_INFO "songname_offset = 0x%08x", songname_offset);
 		expdata.songnamelen = read32b(f);
-		fseek(f, start + songname_offset, SEEK_SET);
+		xmp_fseek(f, start + songname_offset, SEEK_SET);
 		D_(D_INFO "expdata.songnamelen = %d", expdata.songnamelen);
 		for (i = 0; i < expdata.songnamelen; i++) {
 			if (i >= XMP_NAME_SIZE)
@@ -234,12 +234,12 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 	for (i = 0; i < mod->pat; i++) {
 		int block_offset;
 
-		fseek(f, start + blockarr_offset + i * 4, SEEK_SET);
+		xmp_fseek(f, start + blockarr_offset + i * 4, SEEK_SET);
 		block_offset = read32b(f);
 		D_(D_INFO "block %d block_offset = 0x%08x", i, block_offset);
 		if (block_offset == 0)
 			continue;
-		fseek(f, start + block_offset, SEEK_SET);
+		xmp_fseek(f, start + block_offset, SEEK_SET);
 
 		if (ver > 0) {
 			block.numtracks = read16b(f);
@@ -273,11 +273,11 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 	for (i = 0; i < mod->pat; i++) {
 		int block_offset;
 
-		fseek(f, start + blockarr_offset + i * 4, SEEK_SET);
+		xmp_fseek(f, start + blockarr_offset + i * 4, SEEK_SET);
 		block_offset = read32b(f);
 		if (block_offset == 0)
 			continue;
-		fseek(f, start + block_offset, SEEK_SET);
+		xmp_fseek(f, start + block_offset, SEEK_SET);
 
 		if (ver > 0) {
 			block.numtracks = read16b(f);
@@ -351,7 +351,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 		int smpl_offset;
 		char name[40] = "";
 
-		fseek(f, start + smplarr_offset + i * 4, SEEK_SET);
+		xmp_fseek(f, start + smplarr_offset + i * 4, SEEK_SET);
 		smpl_offset = read32b(f);
 
 		D_(D_INFO "sample %d smpl_offset = 0x%08x", i, smpl_offset);
@@ -359,22 +359,22 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 		if (smpl_offset == 0)
 			continue;
 
-		fseek(f, start + smpl_offset, SEEK_SET);
+		xmp_fseek(f, start + smpl_offset, SEEK_SET);
 		instr.length = read32b(f);
 		instr.type = read16b(f);
 
-		pos = ftell(f);
+		pos = xmp_ftell(f);
 
 		if (expdata_offset && i < expdata.i_ext_entries) {
-		    fseek(f, iinfo_offset + i * expdata.i_ext_entrsz, SEEK_SET);
-		    fread(name, 40, 1, f);
+		    xmp_fseek(f, iinfo_offset + i * expdata.i_ext_entrsz, SEEK_SET);
+		    xmp_fread(name, 40, 1, f);
 		}
 
 		D_(D_INFO "\n[%2x] %-40.40s %d", i, name, instr.type);
 
 		exp_smp.finetune = 0;
 		if (expdata_offset && i < expdata.s_ext_entries) {
-			fseek(f, expsmp_offset + i * expdata.s_ext_entrsz,
+			xmp_fseek(f, expsmp_offset + i * expdata.s_ext_entrsz,
 							SEEK_SET);
 			exp_smp.hold = read8(f);
 			exp_smp.decay = read8(f);
@@ -382,14 +382,14 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 			exp_smp.finetune = read8(f);
 		}
 
-		fseek(f, pos, SEEK_SET);
+		xmp_fseek(f, pos, SEEK_SET);
 
 		if (instr.type == -2) {			/* Hybrid */
 			int length, type;
-			int pos = ftell(f);
+			int pos = xmp_ftell(f);
 
 			synth.defaultdecay = read8(f);
-			fseek(f, 3, SEEK_CUR);
+			xmp_fseek(f, 3, SEEK_CUR);
 			synth.rep = read16b(f);
 			synth.replen = read16b(f);
 			synth.voltbllen = read16b(f);
@@ -397,10 +397,10 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 			synth.volspeed = read8(f);
 			synth.wfspeed = read8(f);
 			synth.wforms = read16b(f);
-			fread(synth.voltbl, 1, 128, f);;
-			fread(synth.wftbl, 1, 128, f);;
+			xmp_fread(synth.voltbl, 1, 128, f);;
+			xmp_fread(synth.wftbl, 1, 128, f);;
 
-			fseek(f, pos - 6 + read32b(f), SEEK_SET);
+			xmp_fseek(f, pos - 6 + read32b(f), SEEK_SET);
 			length = read32b(f);
 			type = read16b(f);
 
@@ -449,10 +449,10 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 		}
 
 		if (instr.type == -1) {			/* Synthetic */
-			int pos = ftell(f);
+			int pos = xmp_ftell(f);
 
 			synth.defaultdecay = read8(f);
-			fseek(f, 3, SEEK_CUR);
+			xmp_fseek(f, 3, SEEK_CUR);
 			synth.rep = read16b(f);
 			synth.replen = read16b(f);
 			synth.voltbllen = read16b(f);
@@ -460,8 +460,8 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 			synth.volspeed = read8(f);
 			synth.wfspeed = read8(f);
 			synth.wforms = read16b(f);
-			fread(synth.voltbl, 1, 128, f);;
-			fread(synth.wftbl, 1, 128, f);;
+			xmp_fread(synth.voltbl, 1, 128, f);;
+			xmp_fread(synth.wftbl, 1, 128, f);;
 			for (j = 0; j < 64; j++)
 				synth.wf[j] = read32b(f);
 
@@ -495,7 +495,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 				mod->xxi[i].sub[j].sid = smp_idx;
 				mod->xxi[i].sub[j].fin = exp_smp.finetune;
 
-				fseek(f, pos - 6 + synth.wf[j], SEEK_SET);
+				xmp_fseek(f, pos - 6 + synth.wf[j], SEEK_SET);
 
 				mod->xxs[smp_idx].len = read16b(f) * 2;
 				mod->xxs[smp_idx].lps = 0;
@@ -546,7 +546,7 @@ static int mmd1_load(struct module_data *m, FILE *f, const int start)
 				mod->xxi[i].sub[0].xpo,
 				mod->xxi[i].sub[0].fin >> 4);
 
-		fseek(f, start + smpl_offset + 6, SEEK_SET);
+		xmp_fseek(f, start + smpl_offset + 6, SEEK_SET);
 		load_sample(m, f, 0, &mod->xxs[smp_idx], NULL);
 
 		smp_idx++;

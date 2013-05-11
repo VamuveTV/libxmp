@@ -9,8 +9,8 @@
 #include "loader.h"
 #include "synth.h"
 
-static int rad_test(FILE *, char *, const int);
-static int rad_load(struct module_data *, FILE *, const int);
+static int rad_test(xmp_file, char *, const int);
+static int rad_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader rad_loader = {
 	"Reality Adlib Tracker (RAD)",
@@ -18,11 +18,11 @@ const struct format_loader rad_loader = {
 	rad_load
 };
 
-static int rad_test(FILE *f, char *t, const int start)
+static int rad_test(xmp_file f, char *t, const int start)
 {
 	char buf[16];
 
-	if (fread(buf, 1, 16, f) < 16)
+	if (xmp_fread(buf, 1, 16, f) < 16)
 		return -1;
 
 	if (memcmp(buf, "RAD by REALiTY!!", 16))
@@ -39,7 +39,7 @@ struct rad_instrument {
 };
 
 
-static int rad_load(struct module_data *m, FILE *f, const int start)
+static int rad_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -53,7 +53,7 @@ static int rad_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fseek(f, 16, SEEK_SET);		/* skip magic */
+	xmp_fseek(f, 16, SEEK_SET);		/* skip magic */
 	version = read8(f);
 	flags = read8(f);
 
@@ -78,21 +78,21 @@ static int rad_load(struct module_data *m, FILE *f, const int start)
 	/* Read instruments */
 	D_(D_INFO "Read instruments");
 
-	pos = ftell(f);
+	pos = xmp_ftell(f);
 
 	mod->ins = 0;
 	while ((b = read8(f)) != 0) {
 		mod->ins = b;
-		fread(sid, 1, 11, f);
+		xmp_fread(sid, 1, 11, f);
 	}
 
-	fseek(f, pos, SEEK_SET);
+	xmp_fseek(f, pos, SEEK_SET);
 	mod->smp = mod->ins;
 
 	INSTRUMENT_INIT();
 
 	while ((b = read8(f)) != 0) {
-		fread(sid, 1, 11, f);
+		xmp_fread(sid, 1, 11, f);
 		load_sample(m, f, SAMPLE_FLAG_ADLIB | SAMPLE_FLAG_HSC,
 					&mod->xxs[b - 1], (char *)sid);
 	}
@@ -138,7 +138,7 @@ static int rad_load(struct module_data *m, FILE *f, const int start)
 		if (ppat[i] == 0)
 			continue;
 
-		fseek(f, start + ppat[i], SEEK_SET);
+		xmp_fseek(f, start + ppat[i], SEEK_SET);
 
 		do {
 			r = read8(f);		/* Row number */

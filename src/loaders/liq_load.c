@@ -72,8 +72,8 @@ struct liq_pattern {
 };
 
 
-static int liq_test (FILE *, char *, const int);
-static int liq_load (struct module_data *, FILE *, const int);
+static int liq_test (xmp_file, char *, const int);
+static int liq_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader liq_loader = {
     "Liquid Tracker (LIQ)",
@@ -81,11 +81,11 @@ const struct format_loader liq_loader = {
     liq_load
 };
 
-static int liq_test(FILE *f, char *t, const int start)
+static int liq_test(xmp_file f, char *t, const int start)
 {
     char buf[15];
 
-    if (fread(buf, 1, 14, f) < 14)
+    if (xmp_fread(buf, 1, 14, f) < 14)
 	return -1;
 
     if (memcmp(buf, "Liquid Module:", 14))
@@ -177,7 +177,7 @@ static void xlat_fx(int c, struct xmp_event *e)
 }
 
 
-static void decode_event(uint8 x1, struct xmp_event *event, FILE *f)
+static void decode_event(uint8 x1, struct xmp_event *event, xmp_file f)
 {
     uint8 x2;
 
@@ -212,7 +212,7 @@ static void decode_event(uint8 x1, struct xmp_event *event, FILE *f)
     assert (event->fxt <= 26);
 }
 
-static int liq_load(struct module_data *m, FILE *f, const int start)
+static int liq_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i;
@@ -226,11 +226,11 @@ static int liq_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&lh.magic, 14, 1, f);
-    fread(&lh.name, 30, 1, f);
-    fread(&lh.author, 20, 1, f);
+    xmp_fread(&lh.magic, 14, 1, f);
+    xmp_fread(&lh.name, 30, 1, f);
+    xmp_fread(&lh.author, 20, 1, f);
     read8(f);
-    fread(&lh.tracker, 20, 1, f);
+    xmp_fread(&lh.tracker, 20, 1, f);
 
     lh.version = read16l(f);
     lh.speed = read16l(f);
@@ -247,7 +247,7 @@ static int liq_load(struct module_data *m, FILE *f, const int start)
     if ((lh.version >> 8) == 0) {
 	lh.hdrsz = lh.len;
 	lh.len = 0;
-	fseek(f, -2, SEEK_CUR);
+	xmp_fseek(f, -2, SEEK_CUR);
     }
 
     mod->spd = lh.speed;
@@ -280,14 +280,14 @@ static int liq_load(struct module_data *m, FILE *f, const int start)
 	for (i = 0; i < mod->chn; i++)
 	    mod->xxc[i].vol = read8(f);
 
-	fread(mod->xxo, 1, mod->len, f);
+	xmp_fread(mod->xxo, 1, mod->len, f);
 
 	/* Skip 1.01 echo pools */
-	fseek(f, lh.hdrsz - (0x6d + mod->chn * 2 + mod->len), SEEK_CUR);
+	xmp_fseek(f, lh.hdrsz - (0x6d + mod->chn * 2 + mod->len), SEEK_CUR);
     } else {
-	fseek(f, start + 0xf0, SEEK_SET);
-	fread (mod->xxo, 1, 256, f);
-	fseek(f, start + lh.hdrsz, SEEK_SET);
+	xmp_fseek(f, start + 0xf0, SEEK_SET);
+	xmp_fread (mod->xxo, 1, 256, f);
+	xmp_fseek(f, start + lh.hdrsz, SEEK_SET);
 
 	for (i = 0; i < 256; i++) {
 	    if (mod->xxo[i] == 0xff)
@@ -315,7 +315,7 @@ static int liq_load(struct module_data *m, FILE *f, const int start)
 	    continue;
 	assert(pmag == 0x4c500000);	/* LP\0\0 */
 	
-	fread(&lp.name, 30, 1, f);
+	xmp_fread(&lp.name, 30, 1, f);
 	lp.rows = read16l(f);
 	lp.size = read32l(f);
 	lp.reserved = read32l(f);
@@ -326,7 +326,7 @@ static int liq_load(struct module_data *m, FILE *f, const int start)
 
 	row = 0;
 	channel = 0;
-	count = ftell (f);
+	count = xmp_ftell (f);
 
 /*
  * Packed pattern data is stored full Track after full Track from the left to
@@ -356,7 +356,7 @@ test_event:
 	switch (x1) {
 	case 0xc0:			/* end of pattern */
 	    D_(D_WARN "- end of pattern");
-	    assert (ftell (f) - count == lp.size);
+	    assert (xmp_ftell (f) - count == lp.size);
 	    goto next_pattern;
 	case 0xe1:			/* skip channels */
 	    x1 = read8(f);
@@ -476,7 +476,7 @@ next_pattern:
 	unsigned char b[4];
 
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-	fread (&b, 1, 4, f);
+	xmp_fread (&b, 1, 4, f);
 
 	if (b[0] == '?' && b[1] == '?' && b[2] == '?' && b[3] == '?')
 	    continue;
@@ -484,9 +484,9 @@ next_pattern:
 	D_(D_WARN "INS %d: %c %c %c %c", i, b[0], b[1], b[2], b[3]);
 
 	li.version = read16l(f);
-	fread(&li.name, 30, 1, f);
-	fread(&li.editor, 20, 1, f);
-	fread(&li.author, 20, 1, f);
+	xmp_fread(&li.name, 30, 1, f);
+	xmp_fread(&li.editor, 20, 1, f);
+	xmp_fread(&li.author, 20, 1, f);
 	li.hw_id = read8(f);
 
 	li.length = read32l(f);
@@ -506,8 +506,8 @@ next_pattern:
 	li.crc = read32l(f);
 
 	li.midi_ch = read8(f);
-	fread(&li.rsvd, 11, 1, f);
-	fread(&li.filename, 25, 1, f);
+	xmp_fread(&li.rsvd, 11, 1, f);
+	xmp_fread(&li.filename, 25, 1, f);
 
 	mod->xxi[i].nsm = !!(li.length);
 	mod->xxi[i].vol = 0x40;
@@ -545,7 +545,7 @@ next_pattern:
 		li.version >> 8, li.version & 0xff, li.c2spd);
 
 	c2spd_to_note (li.c2spd, &mod->xxi[i].sub[0].xpo, &mod->xxi[i].sub[0].fin);
-	fseek(f, li.hdrsz - 0x90, SEEK_CUR);
+	xmp_fseek(f, li.hdrsz - 0x90, SEEK_CUR);
 
 	if (!mod->xxs[i].len)
 	    continue;

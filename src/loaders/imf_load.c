@@ -88,8 +88,8 @@ struct imf_sample {
 #define MAGIC_IM10	MAGIC4('I','M','1','0')
 #define MAGIC_II10	MAGIC4('I','I','1','0')
 
-static int imf_test (FILE *, char *, const int);
-static int imf_load (struct module_data *, FILE *, const int);
+static int imf_test (xmp_file, char *, const int);
+static int imf_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader imf_loader = {
     "Imago Orpheus (IMF)",
@@ -97,13 +97,13 @@ const struct format_loader imf_loader = {
     imf_load
 };
 
-static int imf_test(FILE *f, char *t, const int start)
+static int imf_test(xmp_file f, char *t, const int start)
 {
-    fseek(f, start + 60, SEEK_SET);
+    xmp_fseek(f, start + 60, SEEK_SET);
     if (read32b(f) != MAGIC_IM10)
 	return -1;
 
-    fseek(f, start, SEEK_SET);
+    xmp_fseek(f, start, SEEK_SET);
     read_title(f, t, 32);
 
     return 0;
@@ -220,7 +220,7 @@ static void xlat_fx (int c, uint8 *fxt, uint8 *fxp, uint8 *arpeggio_val)
 }
 
 
-static int imf_load(struct module_data *m, FILE *f, const int start)
+static int imf_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int c, r, i, j;
@@ -235,28 +235,28 @@ static int imf_load(struct module_data *m, FILE *f, const int start)
     LOAD_INIT();
 
     /* Load and convert header */
-    fread(&ih.name, 32, 1, f);
+    xmp_fread(&ih.name, 32, 1, f);
     ih.len = read16l(f);
     ih.pat = read16l(f);
     ih.ins = read16l(f);
     ih.flg = read16l(f);
-    fread(&ih.unused1, 8, 1, f);
+    xmp_fread(&ih.unused1, 8, 1, f);
     ih.tpo = read8(f);
     ih.bpm = read8(f);
     ih.vol = read8(f);
     ih.amp = read8(f);
-    fread(&ih.unused2, 8, 1, f);
+    xmp_fread(&ih.unused2, 8, 1, f);
     ih.magic = read32b(f);
 
     for (i = 0; i < 32; i++) {
-	fread(&ih.chn[i].name, 12, 1, f);
+	xmp_fread(&ih.chn[i].name, 12, 1, f);
 	ih.chn[i].status = read8(f);
 	ih.chn[i].pan = read8(f);
 	ih.chn[i].chorus = read8(f);
 	ih.chn[i].reverb = read8(f);
     }
 
-    fread(&ih.pos, 256, 1, f);
+    xmp_fread(&ih.pos, 256, 1, f);
 
 #if 0
     if (ih.magic != MAGIC_IM10)
@@ -367,9 +367,9 @@ static int imf_load(struct module_data *m, FILE *f, const int start)
     D_(D_INFO "Instruments: %d", mod->ins);
 
     for (smp_num = i = 0; i < mod->ins; i++) {
-	fread(&ii.name, 32, 1, f);
-	fread(&ii.map, 120, 1, f);
-	fread(&ii.unused, 8, 1, f);
+	xmp_fread(&ii.name, 32, 1, f);
+	xmp_fread(&ii.map, 120, 1, f);
+	xmp_fread(&ii.unused, 8, 1, f);
 	for (j = 0; j < 32; j++)
 		ii.vol_env[j] = read16l(f);
 	for (j = 0; j < 32; j++)
@@ -382,7 +382,7 @@ static int imf_load(struct module_data *m, FILE *f, const int start)
 	    ii.env[j].lps = read8(f);
 	    ii.env[j].lpe = read8(f);
 	    ii.env[j].flg = read8(f);
-	    fread(&ii.env[j].unused, 3, 1, f);
+	    xmp_fread(&ii.env[j].unused, 3, 1, f);
 	}
 	ii.fadeout = read16l(f);
 	ii.nsm = read16l(f);
@@ -421,17 +421,17 @@ static int imf_load(struct module_data *m, FILE *f, const int start)
 
 	for (j = 0; j < ii.nsm; j++, smp_num++) {
 
-	    fread(&is.name, 13, 1, f);
-	    fread(&is.unused1, 3, 1, f);
+	    xmp_fread(&is.name, 13, 1, f);
+	    xmp_fread(&is.unused1, 3, 1, f);
 	    is.len = read32l(f);
 	    is.lps = read32l(f);
 	    is.lpe = read32l(f);
 	    is.rate = read32l(f);
 	    is.vol = read8(f);
 	    is.pan = read8(f);
-	    fread(&is.unused2, 14, 1, f);
+	    xmp_fread(&is.unused2, 14, 1, f);
 	    is.flg = read8(f);
-	    fread(&is.unused3, 5, 1, f);
+	    xmp_fread(&is.unused3, 5, 1, f);
 	    is.ems = read16l(f);
 	    is.dram = read32l(f);
 	    is.magic = read32b(f);

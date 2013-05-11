@@ -20,8 +20,8 @@
  * (http://www.loricentral.com/jj2music.html)
  */
 
-static int gal5_test(FILE *, char *, const int);
-static int gal5_load(struct module_data *, FILE *, const int);
+static int gal5_test(xmp_file , char *, const int);
+static int gal5_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader gal5_loader = {
 	"Galaxy Music System 5.0 (J2B)",
@@ -34,7 +34,7 @@ struct local_data {
     uint8 chn_pan[64];
 };
 
-static int gal5_test(FILE *f, char *t, const int start)
+static int gal5_test(xmp_file f, char *t, const int start)
 {
         if (read32b(f) != MAGIC4('R', 'I', 'F', 'F'))
 		return -1;
@@ -53,14 +53,14 @@ static int gal5_test(FILE *f, char *t, const int start)
 	return 0;
 }
 
-static void get_init(struct module_data *m, int size, FILE *f, void *parm)
+static void get_init(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
 	char buf[64];
 	int flags;
 	
-	fread(buf, 1, 64, f);
+	xmp_fread(buf, 1, 64, f);
 	strncpy(mod->name, buf, 64);
 	set_type(m, "Galaxy Music System 5.0");
 	flags = read8(f);	/* bit 0: Amiga period */
@@ -72,10 +72,10 @@ static void get_init(struct module_data *m, int size, FILE *f, void *parm)
 	read16l(f);		/* unknown - 0x01c5 */
 	read16l(f);		/* unknown - 0xff00 */
 	read8(f);		/* unknown - 0x80 */
-	fread(data->chn_pan, 1, 64, f);
+	xmp_fread(data->chn_pan, 1, 64, f);
 }
 
-static void get_ordr(struct module_data *m, int size, FILE *f, void *parm)
+static void get_ordr(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i;
@@ -87,7 +87,7 @@ static void get_ordr(struct module_data *m, int size, FILE *f, void *parm)
 		mod->xxo[i] = read8(f);
 }
 
-static void get_patt_cnt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt_cnt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i;
@@ -98,7 +98,7 @@ static void get_patt_cnt(struct module_data *m, int size, FILE *f, void *parm)
 		mod->pat = i;
 }
 
-static void get_inst_cnt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_inst_cnt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i;
@@ -111,7 +111,7 @@ static void get_inst_cnt(struct module_data *m, int size, FILE *f, void *parm)
 		mod->ins = i;
 }
 
-static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event, dummy;
@@ -172,7 +172,7 @@ static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
+static void get_inst(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, srate, finetune, flags;
@@ -182,10 +182,10 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 	read8(f);		/* 00 */
 	i = read8(f);		/* instrument number */
 	
-	fread(&mod->xxi[i].name, 1, 28, f);
+	xmp_fread(&mod->xxi[i].name, 1, 28, f);
 	str_adj((char *)mod->xxi[i].name);
 
-	fseek(f, 290, SEEK_CUR);	/* Sample/note map, envelopes */
+	xmp_fseek(f, 290, SEEK_CUR);	/* Sample/note map, envelopes */
 	mod->xxi[i].nsm = read16l(f);
 
 	D_(D_INFO "[%2X] %-28.28s  %2d ", i, mod->xxi[i].name, mod->xxi[i].nsm);
@@ -204,7 +204,7 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 	read32b(f);	/* size */
 	read32b(f);	/* unknown - usually 0x40000000 */
 
-	fread(&mod->xxs[i].name, 1, 28, f);
+	xmp_fread(&mod->xxs[i].name, 1, 28, f);
 	str_adj((char *)mod->xxs[i].name);
 
 	read32b(f);	/* unknown - 0x0000 */
@@ -254,7 +254,7 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static int gal5_load(struct module_data *m, FILE *f, const int start)
+static int gal5_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	iff_handle handle;
@@ -267,7 +267,7 @@ static int gal5_load(struct module_data *m, FILE *f, const int start)
 	read32b(f);	/* Skip size */
 	read32b(f);	/* Skip AM   */
 
-	offset = ftell(f);
+	offset = xmp_ftell(f);
 
 	mod->smp = mod->ins = 0;
 
@@ -285,7 +285,7 @@ static int gal5_load(struct module_data *m, FILE *f, const int start)
 	iff_set_quirk(handle, IFF_CHUNK_ALIGN2);
 
 	/* Load IFF chunks */
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		iff_chunk(handle, m, f, &data);
 	}
 
@@ -301,7 +301,7 @@ static int gal5_load(struct module_data *m, FILE *f, const int start)
 	D_(D_INFO "Stored patterns: %d", mod->pat);
 	D_(D_INFO "Stored samples: %d ", mod->smp);
 
-	fseek(f, start + offset, SEEK_SET);
+	xmp_fseek(f, start + offset, SEEK_SET);
 
 	handle = iff_new();
 	if (handle == NULL)
@@ -315,7 +315,7 @@ static int gal5_load(struct module_data *m, FILE *f, const int start)
 	iff_set_quirk(handle, IFF_CHUNK_ALIGN2);
 
 	/* Load IFF chunks */
-	while (!feof (f)) {
+	while (!xmp_feof (f)) {
 		iff_chunk(handle, m, f, &data);
 	}
 

@@ -12,8 +12,8 @@
 #define MAGIC_PSM_	MAGIC4('P','S','M',0xfe)
 
 
-static int psm_test (FILE *, char *, const int);
-static int psm_load (struct module_data *, FILE *, const int);
+static int psm_test (xmp_file, char *, const int);
+static int psm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader psm_loader = {
 	"Protracker Studio (PSM)",
@@ -21,7 +21,7 @@ const struct format_loader psm_loader = {
 	psm_load
 };
 
-static int psm_test(FILE *f, char *t, const int start)
+static int psm_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_PSM_)
 		return -1;
@@ -34,7 +34,7 @@ static int psm_test(FILE *f, char *t, const int start)
 
 /* FIXME: effects translation */
 
-static int psm_load(struct module_data *m, FILE *f, const int start)
+static int psm_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int c, r, i;
@@ -48,7 +48,7 @@ static int psm_load(struct module_data *m, FILE *f, const int start)
 
 	read32b(f);
 
-	fread(buf, 1, 60, f);
+	xmp_fread(buf, 1, 60, f);
 	strncpy(mod->name, (char *)buf, XMP_NAME_SIZE);
 
 	type = read8(f);	/* song type */
@@ -82,23 +82,23 @@ static int psm_load(struct module_data *m, FILE *f, const int start)
 
 	MODULE_INFO();
 
-	fseek(f, start + p_ord, SEEK_SET);
-	fread(mod->xxo, 1, mod->len, f);
+	xmp_fseek(f, start + p_ord, SEEK_SET);
+	xmp_fread(mod->xxo, 1, mod->len, f);
 
-	fseek(f, start + p_chn, SEEK_SET);
-	fread(buf, 1, 16, f);
+	xmp_fseek(f, start + p_chn, SEEK_SET);
+	xmp_fread(buf, 1, 16, f);
 
 	INSTRUMENT_INIT();
 
-	fseek(f, start + p_ins, SEEK_SET);
+	xmp_fseek(f, start + p_ins, SEEK_SET);
 	for (i = 0; i < mod->ins; i++) {
 		uint16 flags, c2spd;
 		int finetune;
 
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-		fread(buf, 1, 13, f);		/* sample filename */
-		fread(buf, 1, 24, f);		/* sample description */
+		xmp_fread(buf, 1, 13, f);		/* sample filename */
+		xmp_fread(buf, 1, 24, f);		/* sample description */
 		strncpy((char *)mod->xxi[i].name, (char *)buf, 24);
 		str_adj((char *)mod->xxi[i].name);
 		p_smp[i] = read32l(f);
@@ -130,7 +130,7 @@ static int psm_load(struct module_data *m, FILE *f, const int start)
 
 	D_(D_INFO "Stored patterns: %d", mod->pat);
 
-	fseek(f, start + p_pat, SEEK_SET);
+	xmp_fseek(f, start + p_pat, SEEK_SET);
 	for (i = 0; i < mod->pat; i++) {
 		int len;
 		uint8 b, rows, chan;
@@ -175,7 +175,7 @@ static int psm_load(struct module_data *m, FILE *f, const int start)
 		}
 
 		if (len > 0)
-			fseek(f, len, SEEK_CUR);
+			xmp_fseek(f, len, SEEK_CUR);
 	}
 
 	/* Read samples */
@@ -183,7 +183,7 @@ static int psm_load(struct module_data *m, FILE *f, const int start)
 	D_(D_INFO "Stored samples: %d", mod->smp);
 
 	for (i = 0; i < mod->ins; i++) {
-		fseek(f, start + p_smp[i], SEEK_SET);
+		xmp_fseek(f, start + p_smp[i], SEEK_SET);
 		load_sample(m, f, SAMPLE_FLAG_DIFF, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 

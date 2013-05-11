@@ -14,7 +14,7 @@
 
 #define BUFFER_SIZE 4096
 
-int decrunch_xz(FILE *in, FILE *out)
+int decrunch_xz(xmp_file in, xmp_file out)
 {
 	struct xz_buf b;
 	struct xz_dec *state;
@@ -38,7 +38,7 @@ int decrunch_xz(FILE *in, FILE *out)
 		enum xz_ret r;
 
 		if (b.in_pos == b.in_size) {
-			int rd = fread(membuf, 1, BUFFER_SIZE, in);
+			int rd = xmp_fread(membuf, 1, BUFFER_SIZE, in);
 			if (rd < 0) {
 				ret = -1;
 				break;
@@ -50,7 +50,7 @@ int decrunch_xz(FILE *in, FILE *out)
 		r = xz_dec_run(state, &b);
 
 		if (b.out_pos) {
-			fwrite(b.out, 1, b.out_pos, out);
+			xmp_fwrite(b.out, 1, b.out_pos, out);
 			b.out_pos = 0;
 		}
 

@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_eu(FILE *in, FILE *out)
+static int depack_eu(xmp_file in, xmp_file out)
 {
 	uint8 tmp[1080];
 	uint8 c1;
@@ -20,8 +20,8 @@ static int depack_eu(FILE *in, FILE *out)
 	int i, j, k;
 
 	/* read header ... same as ptk */
-	fread(tmp, 1080, 1, in);
-	fwrite(tmp, 1080, 1, out);
+	xmp_fread(tmp, 1080, 1, in);
+	xmp_fwrite(tmp, 1080, 1, out);
 
 	/* now, let's sort out that a bit :) */
 	/* first, the whole sample size */
@@ -48,7 +48,7 @@ static int depack_eu(FILE *in, FILE *out)
 	for (i = 0; i < npat; i++) {
 		memset(tmp, 0, 1024);
 		for (j = 0; j < 4; j++) {
-			fseek(in, trk_addr[i][j], SEEK_SET);
+			xmp_fseek(in, trk_addr[i][j], SEEK_SET);
 			for (k = 0; k < 64; k++) {
 				uint8 *x = &tmp[k * 16 + j * 4];
 				c1 = read8(in);
@@ -77,10 +77,10 @@ static int depack_eu(FILE *in, FILE *out)
 				}
 			}
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
-	fseek(in, smp_addr, SEEK_SET);
+	xmp_fseek(in, smp_addr, SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

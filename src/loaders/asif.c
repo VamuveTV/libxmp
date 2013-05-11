@@ -17,7 +17,7 @@
 #define MAGIC_INST	MAGIC4('I','N','S','T')
 #define MAGIC_WAVE	MAGIC4('W','A','V','E')
 
-int asif_load(struct module_data *m, FILE *f, int i)
+int asif_load(struct module_data *m, xmp_file f, int i)
 {
 	struct xmp_module *mod = &m->mod;
 	int size, pos;
@@ -38,13 +38,13 @@ int asif_load(struct module_data *m, FILE *f, int i)
 	for (chunk = 0; chunk < 2; ) {
 		id = read32b(f);
 		size = read32b(f);
-		pos = ftell(f) + size;
+		pos = xmp_ftell(f) + size;
 
 		switch (id) {
 		case MAGIC_WAVE:
 			//printf("wave chunk\n");
 		
-			fseek(f, read8(f), SEEK_CUR);	/* skip name */
+			xmp_fseek(f, read8(f), SEEK_CUR);	/* skip name */
 			mod->xxs[i].len = read16l(f) + 1;
 			size = read16l(f);		/* NumSamples */
 			
@@ -66,10 +66,10 @@ int asif_load(struct module_data *m, FILE *f, int i)
 		case MAGIC_INST:
 			//printf("inst chunk\n");
 		
-			fseek(f, read8(f), SEEK_CUR);	/* skip name */
+			xmp_fseek(f, read8(f), SEEK_CUR);	/* skip name */
 		
 			read16l(f);			/* SampNum */
-			fseek(f, 24, SEEK_CUR);		/* skip envelope */
+			xmp_fseek(f, 24, SEEK_CUR);		/* skip envelope */
 			read8(f);			/* ReleaseSegment */
 			read8(f);			/* PriorityIncrement */
 			read8(f);			/* PitchBendRange */
@@ -85,7 +85,7 @@ int asif_load(struct module_data *m, FILE *f, int i)
 			chunk++;
 		}
 
-		fseek(f, pos, SEEK_SET);
+		xmp_fseek(f, pos, SEEK_SET);
 	}
 
 	return 0;

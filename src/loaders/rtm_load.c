@@ -11,8 +11,8 @@
 #include "rtm.h"
 
 
-static int rtm_test(FILE *, char *, const int);
-static int rtm_load (struct module_data *, FILE *, const int);
+static int rtm_test(xmp_file, char *, const int);
+static int rtm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader rtm_loader = {
 	"Real Tracker (RTM)",
@@ -20,11 +20,11 @@ const struct format_loader rtm_loader = {
 	rtm_load
 };
 
-static int rtm_test(FILE *f, char *t, const int start)
+static int rtm_test(xmp_file f, char *t, const int start)
 {
 	char buf[4];
 
-	if (fread(buf, 1, 4, f) < 4)
+	if (xmp_fread(buf, 1, 4, f) < 4)
 		return -1;
 	if (memcmp(buf, "RTMM", 4))
 		return -1;
@@ -40,9 +40,9 @@ static int rtm_test(FILE *f, char *t, const int start)
 
 #define MAX_SAMP 1024
 
-static int read_object_header(FILE *f, struct ObjectHeader *h, char *id)
+static int read_object_header(xmp_file f, struct ObjectHeader *h, char *id)
 {
-	fread(&h->id, 4, 1, f);
+	xmp_fread(&h->id, 4, 1, f);
 	D_(D_WARN "object id: %02x %02x %02x %02x", h->id[0],
 					h->id[1], h->id[2], h->id[3]);
 
@@ -52,7 +52,7 @@ static int read_object_header(FILE *f, struct ObjectHeader *h, char *id)
 	h->rc = read8(f);
 	if (h->rc != 0x20)
 		return -1;
-	fread(&h->name, 32, 1, f);
+	xmp_fread(&h->name, 32, 1, f);
 	h->eof = read8(f);
 	h->version = read16l(f);
 	h->headerSize = read16l(f);
@@ -62,7 +62,7 @@ static int read_object_header(FILE *f, struct ObjectHeader *h, char *id)
 }
 
 
-static int rtm_load(struct module_data *m, FILE *f, const int start)
+static int rtm_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, r;
@@ -82,9 +82,9 @@ static int rtm_load(struct module_data *m, FILE *f, const int start)
 
 	version = oh.version;
 
-	fread(tracker_name, 1, 20, f);
+	xmp_fread(tracker_name, 1, 20, f);
 	tracker_name[20] = 0;
-	fread(composer, 1, 32, f);
+	xmp_fread(composer, 1, 32, f);
 	composer[32] = 0;
 	rh.flags = read16l(f);	/* bit 0: linear table, bit 1: track names */
 	rh.ntrack = read8(f);
@@ -93,11 +93,11 @@ static int rtm_load(struct module_data *m, FILE *f, const int start)
 	rh.npattern = read16l(f);
 	rh.speed = read8(f);
 	rh.tempo = read8(f);
-	fread(&rh.panning, 32, 1, f);
+	xmp_fread(&rh.panning, 32, 1, f);
 	rh.extraDataSize = read32l(f);
 
 	if (version >= 0x0112)
-		fseek(f, 32, SEEK_CUR);		/* skip original name */
+		xmp_fseek(f, 32, SEEK_CUR);		/* skip original name */
 
 	for (i = 0; i < rh.nposition; i++)
 		mod->xxo[i] = read16l(f);
@@ -131,7 +131,7 @@ static int rtm_load(struct module_data *m, FILE *f, const int start)
 	for (i = 0; i < mod->pat; i++) {
 		uint8 c;
 
-		fseek(f, start + offset, SEEK_SET);
+		xmp_fseek(f, start + offset, SEEK_SET);
 
 		if (read_object_header(f, &oh, "RTND") < 0) {
 			D_(D_CRIT "Error reading pattern %d", i);
@@ -197,7 +197,7 @@ static int rtm_load(struct module_data *m, FILE *f, const int start)
 
 	D_(D_INFO "Instruments: %d", mod->ins);
 
-	fseek(f, start + offset, SEEK_SET);
+	xmp_fseek(f, start + offset, SEEK_SET);
 
 	/* ESTIMATED value! We don't know the actual value at this point */
 	mod->smp = MAX_SAMP;
@@ -222,7 +222,7 @@ static int rtm_load(struct module_data *m, FILE *f, const int start)
 
 		ri.nsample = read8(f);
 		ri.flags = read16l(f);	/* bit 0 : default panning enabled */
-		fread(&ri.table, 120, 1, f);
+		xmp_fread(&ri.table, 120, 1, f);
 
 		ri.volumeEnv.npoint = read8(f);
 		for (j = 0; j < 12; j++) {
@@ -334,7 +334,7 @@ static int rtm_load(struct module_data *m, FILE *f, const int start)
 			mod->xxi[i].sub[j].sid = smpnum;
 
 			if (smpnum >= MAX_SAMP) {
-				fseek(f, rs.length, SEEK_CUR);
+				xmp_fseek(f, rs.length, SEEK_CUR);
 				continue;
 			}
 

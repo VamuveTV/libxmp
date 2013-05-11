@@ -46,15 +46,15 @@ void Depack_TP1 (FILE * in, FILE * out)
 	fseek (in, 8, 0);	/* SEEK_SET */
 	tmp = (uint8 *) malloc (20);
 	memset(tmp, 0, 20);
-	fread (tmp, 20, 1, in);
+	xmp_fread (tmp, 20, 1, in);
 	fwrite (tmp, 20, 1, out);
 	free (tmp);
 
 	/* sample data address */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 	Sample_Data_Address =
 		(c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 /*printf ( "sample data address : %ld\n" , Sample_Data_Address );*/
@@ -65,14 +65,14 @@ void Depack_TP1 (FILE * in, FILE * out)
 			fwrite (&c1, 1, 1, out);
 
 		/* read fine */
-		fread (&c3, 1, 1, in);
+		xmp_fread (&c3, 1, 1, in);
 
 		/* read volume */
-		fread (&c4, 1, 1, in);
+		xmp_fread (&c4, 1, 1, in);
 
 		/* size */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		Whole_Sample_Size += (((c1 << 8) + c2) * 2);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
@@ -83,13 +83,13 @@ void Depack_TP1 (FILE * in, FILE * out)
 		/* write volume */
 		fwrite (&c4, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* loop start */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop start */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* loop size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop size */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 
@@ -98,7 +98,7 @@ void Depack_TP1 (FILE * in, FILE * out)
 
 	/* read size of pattern table */
 	fseek (in, 281, 0);
-	fread (&PatPos, 1, 1, in);
+	xmp_fread (&PatPos, 1, 1, in);
 	PatPos += 0x01;
 	fwrite (&PatPos, 1, 1, out);
 
@@ -108,8 +108,8 @@ void Depack_TP1 (FILE * in, FILE * out)
 
 	for (i = 0; i < PatPos; i++) {
 		fseek (in, 2, 1);
-		fread (&c3, 1, 1, in);
-		fread (&c4, 1, 1, in);
+		xmp_fread (&c3, 1, 1, in);
+		xmp_fread (&c4, 1, 1, in);
 		paddr[i] = (c3 << 8) + c4;
 		if (Start_Pat_Address > paddr[i])
 			Start_Pat_Address = paddr[i];
@@ -176,14 +176,14 @@ void Depack_TP1 (FILE * in, FILE * out)
 		fseek (in, paddr_tmp[i], 0);
 		memset(Pattern, 0, 1024);
 		for (j = 0; j < 256; j++) {
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 /*fprintf ( info , "%ld: %2x," , k , c1 );*/
 			if (c1 == 0xC0) {
 /*fprintf ( info , " <--- empty\n" );*/
 				continue;
 			}
 			if ((c1 & 0xC0) == 0x80) {
-				fread (&c2, 1, 1, in);
+				xmp_fread (&c2, 1, 1, in);
 /*fprintf ( info , "%2x ,\n" , c2 );*/
 				fxt = (c1 >> 2) & 0x0f;
 				fxp = c2;
@@ -191,8 +191,8 @@ void Depack_TP1 (FILE * in, FILE * out)
 				Pattern[j * 4 + 3] = fxp;
 				continue;
 			}
-			fread (&c2, 1, 1, in);
-			fread (&c3, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
+			xmp_fread (&c3, 1, 1, in);
 /*fprintf ( info , "%2x, %2x\n" , c2 , c3 );*/
 
 			ins = ((c2 >> 4) & 0x0f) | ((c1 << 4) & 0x10);
@@ -215,7 +215,7 @@ void Depack_TP1 (FILE * in, FILE * out)
 	/* Sample data */
 	fseek (in, Sample_Data_Address, 0);	/* SEEK_SET */
 	tmp = (uint8 *) malloc (Whole_Sample_Size);
-	fread (tmp, Whole_Sample_Size, 1, in);
+	xmp_fread (tmp, Whole_Sample_Size, 1, in);
 	fwrite (tmp, Whole_Sample_Size, 1, out);
 	free (tmp);
 

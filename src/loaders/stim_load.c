@@ -17,8 +17,8 @@
 
 #define MAGIC_STIM	MAGIC4('S','T','I','M')
 
-static int stim_test(FILE *, char *, const int);
-static int stim_load(struct module_data *, FILE *, const int);
+static int stim_test(xmp_file, char *, const int);
+static int stim_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader stim_loader = {
 	"Slamtilt",
@@ -26,7 +26,7 @@ const struct format_loader stim_loader = {
 	stim_load
 };
 
-static int stim_test(FILE *f, char *t, const int start)
+static int stim_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_STIM)
 		return -1;
@@ -55,7 +55,7 @@ struct stim_header {
 	uint32 pataddr[64];	/* Pattern addresses (add 0xc) */
 };
 
-static int stim_load(struct module_data *m, FILE * f, const int start)
+static int stim_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, k;
@@ -73,7 +73,7 @@ static int stim_load(struct module_data *m, FILE * f, const int start)
 	sh.nos = read16b(f);
 	sh.len = read16b(f);
 	sh.pat = read16b(f);
-	fread(&sh.order, 128, 1, f);
+	xmp_fread(&sh.order, 128, 1, f);
 	for (i = 0; i < 64; i++)
 		sh.pataddr[i] = read32b(f) + 0x0c;
 
@@ -100,7 +100,7 @@ static int stim_load(struct module_data *m, FILE * f, const int start)
 		mod->xxp[i]->rows = 64;
 		TRACK_ALLOC(i);
 
-		fseek(f, start + sh.pataddr[i] + 8, SEEK_SET);
+		xmp_fseek(f, start + sh.pataddr[i] + 8, SEEK_SET);
 
 		for (j = 0; j < 4; j++) {
 			for (k = 0; k < 64; k++) {
@@ -143,7 +143,7 @@ static int stim_load(struct module_data *m, FILE * f, const int start)
 
 	D_(D_INFO "Stored samples: %d", mod->smp);
 
-	fseek(f, start + sh.smpaddr + mod->smp * 4, SEEK_SET);
+	xmp_fseek(f, start + sh.smpaddr + mod->smp * 4, SEEK_SET);
 
 	for (i = 0; i < mod->smp; i++) {
 		si.size = read16b(f);

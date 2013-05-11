@@ -28,49 +28,49 @@
 
 static int unpack(uint8 *src, uint8 *dst, int len);
 
-static int unsqsh(FILE *in, FILE *out)
+static int unsqsh(xmp_file in, xmp_file out)
 {
   unsigned char *src;
   unsigned char *dst;
   int srclen;
   int dstlen;
 
-  if ('X' != fgetc (in) ||
-      'P' != fgetc (in) ||
-      'K' != fgetc (in) ||
-      'F' != fgetc (in)) {
+  if ('X' != xmp_fgetc (in) ||
+      'P' != xmp_fgetc (in) ||
+      'K' != xmp_fgetc (in) ||
+      'F' != xmp_fgetc (in)) {
     goto err;
   }
 
-  srclen  = fgetc (in); srclen <<= 8;
-  srclen |= fgetc (in); srclen <<= 8;
-  srclen |= fgetc (in); srclen <<= 8;
-  srclen |= fgetc (in);
+  srclen  = xmp_fgetc (in); srclen <<= 8;
+  srclen |= xmp_fgetc (in); srclen <<= 8;
+  srclen |= xmp_fgetc (in); srclen <<= 8;
+  srclen |= xmp_fgetc (in);
 
-  if ('S' != fgetc (in) ||
-      'Q' != fgetc (in) ||
-      'S' != fgetc (in) ||
-      'H' != fgetc (in)) {
+  if ('S' != xmp_fgetc (in) ||
+      'Q' != xmp_fgetc (in) ||
+      'S' != xmp_fgetc (in) ||
+      'H' != xmp_fgetc (in)) {
     goto err;
   }
 
-  dstlen  = fgetc (in); dstlen <<= 8;
-  dstlen |= fgetc (in); dstlen <<= 8;
-  dstlen |= fgetc (in); dstlen <<= 8;
-  dstlen |= fgetc (in);
+  dstlen  = xmp_fgetc (in); dstlen <<= 8;
+  dstlen |= xmp_fgetc (in); dstlen <<= 8;
+  dstlen |= xmp_fgetc (in); dstlen <<= 8;
+  dstlen |= xmp_fgetc (in);
  
   src=(unsigned char*)malloc(srclen+3);
   dst=(unsigned char*)malloc(dstlen+100);
   if (src==NULL || dst==NULL)
     goto err;
 
-  if (1 != fread(src,srclen-8,1,in))
+  if (1 != xmp_fread(src,srclen-8,1,in))
     goto err1;
 
   if (unpack(src,dst,dstlen)!=dstlen)
     goto err1;
 
-  if (1 != fwrite(dst,dstlen,1,out))
+  if (1 != xmp_fwrite(dst,dstlen,1,out))
     goto err1;
     
   free(src);
@@ -518,7 +518,7 @@ data_a3	dc.l	$2030405
 */
 
 
-int decrunch_sqsh (FILE *f, FILE *fo)
+int decrunch_sqsh (xmp_file f, xmp_file fo)
 {
     if (fo == NULL)
         return -1;

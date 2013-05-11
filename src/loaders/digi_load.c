@@ -24,8 +24,8 @@
 #include "loader.h"
 
 
-static int digi_test (FILE *, char *, const int);
-static int digi_load (struct module_data *, FILE *, const int);
+static int digi_test (xmp_file, char *, const int);
+static int digi_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader digi_loader = {
     "DIGI Booster",
@@ -33,19 +33,19 @@ const struct format_loader digi_loader = {
     digi_load
 };
 
-static int digi_test(FILE *f, char *t, const int start)
+static int digi_test(xmp_file f, char *t, const int start)
 {
     char buf[20];
 
-    if (fread(buf, 1, 20, f) < 20)
+    if (xmp_fread(buf, 1, 20, f) < 20)
 	return -1;
 
     if (memcmp(buf, "DIGI Booster module", 19))
 	return -1;
 
-    fseek(f, 156, SEEK_CUR);
-    fseek(f, 3 * 4 * 32, SEEK_CUR);
-    fseek(f, 2 * 1 * 32, SEEK_CUR);
+    xmp_fseek(f, 156, SEEK_CUR);
+    xmp_fseek(f, 3 * 4 * 32, SEEK_CUR);
+    xmp_fseek(f, 2 * 1 * 32, SEEK_CUR);
 
     read_title(f, t, 32);
 
@@ -73,7 +73,7 @@ struct digi_header {
 };
 
 
-static int digi_load(struct module_data *m, FILE *f, const int start)
+static int digi_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     struct xmp_event *event = 0;
@@ -84,16 +84,16 @@ static int digi_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&dh.id, 20, 1, f);
+    xmp_fread(&dh.id, 20, 1, f);
 
-    fread(&dh.vstr, 4, 1, f);
+    xmp_fread(&dh.vstr, 4, 1, f);
     dh.ver = read8(f);
     dh.chn = read8(f);
     dh.pack = read8(f);
-    fread(&dh.unknown, 19, 1, f);
+    xmp_fread(&dh.unknown, 19, 1, f);
     dh.pat = read8(f);
     dh.len = read8(f);
-    fread(&dh.ord, 128, 1, f);
+    xmp_fread(&dh.ord, 128, 1, f);
 
     for (i = 0; i < 31; i++)
 	dh.slen[i] = read32b(f);
@@ -106,10 +106,10 @@ static int digi_load(struct module_data *m, FILE *f, const int start)
     for (i = 0; i < 31; i++)
 	dh.fin[i] = read8(f);
 
-    fread(&dh.title, 32, 1, f);
+    xmp_fread(&dh.title, 32, 1, f);
 
     for (i = 0; i < 31; i++)
-        fread(&dh.insname[i], 30, 1, f);
+        xmp_fread(&dh.insname[i], 30, 1, f);
 
     mod->ins = 31;
     mod->smp = mod->ins;
@@ -162,7 +162,7 @@ static int digi_load(struct module_data *m, FILE *f, const int start)
 
 	if (dh.pack) {
 	    w = (read16b(f) - 64) >> 2;
-	    fread (chn_table, 1, 64, f);
+	    xmp_fread (chn_table, 1, 64, f);
 	} else {
 	    w = 64 * mod->chn;
 	    memset (chn_table, 0xff, 64);
@@ -171,7 +171,7 @@ static int digi_load(struct module_data *m, FILE *f, const int start)
 	for (j = 0; j < 64; j++) {
 	    for (c = 0, k = 0x80; c < mod->chn; c++, k >>= 1) {
 	        if (chn_table[j] & k) {
-		    fread (digi_event, 4, 1, f);
+		    xmp_fread (digi_event, 4, 1, f);
 		    event = &EVENT (i, c, j);
 	            cvt_pt_event(event, digi_event);
 		    switch (event->fxt) {

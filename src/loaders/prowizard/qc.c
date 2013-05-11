@@ -45,7 +45,7 @@ static int depack_emod (FILE *in, FILE *out)
 
 	/* read and write title */
 	for (i = 0; i < 20; i++) {
-		fread (&c1, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 	}
 
@@ -53,7 +53,7 @@ static int depack_emod (FILE *in, FILE *out)
 	fseek (in, 21, 1);
 
 	/* read number of samples */
-	fread (&nins, 1, 1, in);
+	xmp_fread (&nins, 1, 1, in);
 
 	/* write empty 930 sample header */
 	tmp = (uint8 *) malloc (930);
@@ -68,23 +68,23 @@ static int depack_emod (FILE *in, FILE *out)
 /*printf ( "sample number:" );*/
 	for (i = 0; i < nins; i++) {
 		/* read sample number byte */
-		fread (&c5, 1, 1, in);
+		xmp_fread (&c5, 1, 1, in);
 		if (c5 > Realnins)
 			Realnins = c5;
 /*printf ( "%d," , c5 );*/
 		fseek (out, 20 + (c5 - 1) * 30, 0);
 
 		/* read volume */
-		fread (&c4, 1, 1, in);
+		xmp_fread (&c4, 1, 1, in);
 
 		/* read size (/2 like ptk) */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		isize[c5] = (((c1 << 8) + c2) * 2);
 
 		/* read/write sample name */
 		for (j = 0; j < 20; j++) {
-			fread (&c3, 1, 1, in);
+			xmp_fread (&c3, 1, 1, in);
 			fwrite (&c3, 1, 1, out);
 		}
 		/* fill to 22 with $00 */
@@ -100,29 +100,29 @@ static int depack_emod (FILE *in, FILE *out)
 		fseek (in, 1, 1);
 
 		/* read/write finetune */
-		fread (&c1, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 
 		/* write volume */
 		fwrite (&c4, 1, 1, out);
 
 		/* read/write loops (start & len) */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		if ((c1 == 0x00) && (c2 == 0x00))
 			c2 = 0x01;
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 
 		/* read address of this sample in the file */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
-		fread (&c3, 1, 1, in);
-		fread (&c4, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
+		xmp_fread (&c3, 1, 1, in);
+		xmp_fread (&c4, 1, 1, in);
 		iaddr[c5] = ((c1 << 24) +
 			(c2 << 16) + (c3 << 8) + (c4));
 	}
@@ -131,42 +131,42 @@ static int depack_emod (FILE *in, FILE *out)
 
 	/* patterns now */
 	/* bypass "pad" ?!? */
-	fread (&c1, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
 	if (c1 != 0x00)
 		fseek (in, -1, 1);
 
 	/* read number of pattern */
-	fread (&pat_max, 1, 1, in);
+	xmp_fread (&pat_max, 1, 1, in);
 /*  printf ( "\npat_max : %d (at %x)\n" , Pat_Max , ftell ( in ) );*/
 
 	/* read patterns info */
 /*printf ( "pattern numbers:" );*/
 	for (i = 0; i < pat_max; i++) {
 		/* read pattern number */
-		fread (&c5, 1, 1, in);
+		xmp_fread (&c5, 1, 1, in);
 /*printf ("%d," , c5);*/
 		/* read number of rows for each pattern */
-		fread (&nrow[c5], 1, 1, in);
+		xmp_fread (&nrow[c5], 1, 1, in);
 
 		/* bypass pattern name */
 		fseek (in, 20, 1);
 
 		/* read pattern address */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
-		fread (&c3, 1, 1, in);
-		fread (&c4, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
+		xmp_fread (&c3, 1, 1, in);
+		xmp_fread (&c4, 1, 1, in);
 		paddr[c5] = ((c1 << 24) + (c2 << 16) + (c3 << 8) + (c4));
 	}
 
 	/* pattern list */
 	/* bypass "pad" ?!? */
-	fread (&c1, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
 	if (c1 != 0x00)
 		fseek (in, -1, 1);
 
 	/* read/write number of position */
-	fread (&pat_pos, 1, 1, in);
+	xmp_fread (&pat_pos, 1, 1, in);
 	fwrite (&pat_pos, 1, 1, out);
 
 	/* write noisetracker byte */
@@ -175,7 +175,7 @@ static int depack_emod (FILE *in, FILE *out)
 
 	/* read/write pattern list */
 	for (i = 0; i < pat_pos; i++) {
-		fread (&c1, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		if (c1 > Real_pat_max)
 			Real_pat_max = c1;
@@ -208,7 +208,7 @@ static int depack_emod (FILE *in, FILE *out)
 		fseek (in, paddr[i], 0);
 		for (j = 0; j <= nrow[i]; j++) {
 			memset(Row, 0, 16);
-			fread (Row, 16, 1, in);
+			xmp_fread (Row, 16, 1, in);
 			for (k = 0; k < 4; k++) {
 				/* fxt */
 				Pattern[j * 16 + k * 4 + 2] = Row[k * 4 + 2];
@@ -264,7 +264,7 @@ static int depack_emod (FILE *in, FILE *out)
 		}
 		fseek (in, iaddr[i], 0);
 		tmp = (uint8 *) malloc (isize[i]);
-		fread (tmp, isize[i], 1, in);
+		xmp_fread (tmp, isize[i], 1, in);
 		fwrite (tmp, isize[i], 1, out);
 		free (tmp);
 	}

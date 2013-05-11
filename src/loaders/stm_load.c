@@ -43,8 +43,8 @@ struct stm_file_header {
 };
 
 
-static int stm_test (FILE *, char *, const int);
-static int stm_load (struct module_data *, FILE *, const int);
+static int stm_test (xmp_file, char *, const int);
+static int stm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader stm_loader = {
     "Scream Tracker 2 (STM)",
@@ -52,12 +52,12 @@ const struct format_loader stm_loader = {
     stm_load
 };
 
-static int stm_test(FILE *f, char *t, const int start)
+static int stm_test(xmp_file f, char *t, const int start)
 {
     char buf[8];
 
-    fseek(f, start + 20, SEEK_SET);
-    if (fread(buf, 1, 8, f) < 8)
+    xmp_fseek(f, start + 20, SEEK_SET);
+    if (xmp_fread(buf, 1, 8, f) < 8)
 	return -1;
     if (memcmp(buf, "!Scream!", 8) && memcmp(buf, "BMOD2STM", 8))
 	return -1;
@@ -70,7 +70,7 @@ static int stm_test(FILE *f, char *t, const int start)
     if (read8(f) < 1)		/* We don't want STX files */
 	return -1;
 
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 20);
 
     return 0;
@@ -100,7 +100,7 @@ static const uint8 fx[] = {
 };
 
 
-static int stm_load(struct module_data *m, FILE *f, const int start)
+static int stm_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -111,8 +111,8 @@ static int stm_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&sfh.name, 20, 1, f);			/* ASCIIZ song name */
-    fread(&sfh.magic, 8, 1, f);			/* '!Scream!' */
+    xmp_fread(&sfh.name, 20, 1, f);			/* ASCIIZ song name */
+    xmp_fread(&sfh.magic, 8, 1, f);			/* '!Scream!' */
     sfh.rsvd1 = read8(f);			/* '\x1a' */
     sfh.type = read8(f);			/* 1=song, 2=module */
     sfh.vermaj = read8(f);			/* Major version number */
@@ -120,10 +120,10 @@ static int stm_load(struct module_data *m, FILE *f, const int start)
     sfh.tempo = read8(f);			/* Playback tempo */
     sfh.patterns = read8(f);			/* Number of patterns */
     sfh.gvol = read8(f);			/* Global volume */
-    fread(&sfh.rsvd2, 13, 1, f);		/* Reserved */
+    xmp_fread(&sfh.rsvd2, 13, 1, f);		/* Reserved */
 
     for (i = 0; i < 31; i++) {
-	fread(&sfh.ins[i].name, 12, 1, f);	/* ASCIIZ instrument name */
+    xmp_fread(&sfh.ins[i].name, 12, 1, f);	/* ASCIIZ instrument name */
 	sfh.ins[i].id = read8(f);		/* Id=0 */
 	sfh.ins[i].idisk = read8(f);		/* Instrument disk */
 	sfh.ins[i].rsvd1 = read16l(f);		/* Reserved */
@@ -184,7 +184,7 @@ static int stm_load(struct module_data *m, FILE *f, const int start)
 	c2spd_to_note (sfh.ins[i].c2spd, &mod->xxi[i].sub[0].xpo, &mod->xxi[i].sub[0].fin);
     }
 
-    fread(mod->xxo, 1, 128, f);
+    xmp_fread(mod->xxo, 1, 128, f);
 
     for (i = 0; i < 128; i++)
 	if (mod->xxo[i] >= mod->pat)

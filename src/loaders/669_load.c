@@ -9,8 +9,8 @@
 #include "loader.h"
 
 
-static int ssn_test (FILE *, char *, const int);
-static int ssn_load (struct module_data *, FILE *, const int);
+static int ssn_test (xmp_file, char *, const int);
+static int ssn_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader ssn_loader = {
     "Composer 669",
@@ -18,7 +18,7 @@ const struct format_loader ssn_loader = {
     ssn_load
 };
 
-static int ssn_test(FILE *f, char *t, const int start)
+static int ssn_test(xmp_file f, char *t, const int start)
 {
     uint16 id;
 
@@ -26,11 +26,11 @@ static int ssn_test(FILE *f, char *t, const int start)
     if (id != 0x6966 && id != 0x4a4e)
 	return -1;
 
-    fseek(f, 238, SEEK_CUR);
+    xmp_fseek(f, 238, SEEK_CUR);
     if (read8(f) != 0xff)
 	return -1;
 
-    fseek(f, start + 2, SEEK_SET);
+    xmp_fseek(f, start + 2, SEEK_SET);
     read_title(f, t, 36);
 
     return 0;
@@ -71,7 +71,7 @@ static const uint8 fx[] = {
 };
 
 
-static int ssn_load(struct module_data *m, FILE *f, const int start)
+static int ssn_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -82,14 +82,14 @@ static int ssn_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&sfh.marker, 2, 1, f);	/* 'if'=standard, 'JN'=extended */
-    fread(&sfh.message, 108, 1, f);	/* Song message */
+    xmp_fread(&sfh.marker, 2, 1, f);	/* 'if'=standard, 'JN'=extended */
+    xmp_fread(&sfh.message, 108, 1, f);	/* Song message */
     sfh.nos = read8(f);			/* Number of samples (0-64) */
     sfh.nop = read8(f);			/* Number of patterns (0-128) */
     sfh.loop = read8(f);		/* Loop order number */
-    fread(&sfh.order, 128, 1, f);	/* Order list */
-    fread(&sfh.speed, 128, 1, f);	/* Tempo list for patterns */
-    fread(&sfh.pbrk, 128, 1, f);	/* Break list for patterns */
+    xmp_fread(&sfh.order, 128, 1, f);	/* Order list */
+    xmp_fread(&sfh.speed, 128, 1, f);	/* Tempo list for patterns */
+    xmp_fread(&sfh.pbrk, 128, 1, f);	/* Break list for patterns */
 
     mod->chn = 8;
     mod->ins = sfh.nos;
@@ -125,7 +125,7 @@ static int ssn_load(struct module_data *m, FILE *f, const int start)
     for (i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-	fread (&sih.name, 13, 1, f);		/* ASCIIZ instrument name */
+	xmp_fread (&sih.name, 13, 1, f);		/* ASCIIZ instrument name */
 	sih.length = read32l(f);		/* Instrument size */
 	sih.loop_start = read32l(f);		/* Instrument loop start */
 	sih.loopend = read32l(f);		/* Instrument loop end */
@@ -161,7 +161,7 @@ static int ssn_load(struct module_data *m, FILE *f, const int start)
 
 	for (j = 0; j < 64 * 8; j++) {
 	    event = &EVENT(i, j % 8, j / 8);
-	    fread(&ev, 1, 3, f);
+	    xmp_fread(&ev, 1, 3, f);
 
 	    if ((ev[0] & 0xfe) != 0xfe) {
 		event->note = 1 + 36 + (ev[0] >> 2);

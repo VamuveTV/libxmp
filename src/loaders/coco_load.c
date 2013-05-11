@@ -8,8 +8,8 @@
 
 #include "loader.h"
 
-static int coco_test (FILE *, char *, const int);
-static int coco_load (struct module_data *, FILE *, const int);
+static int coco_test (xmp_file, char *, const int);
+static int coco_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader coco_loader = {
 	"Coconizer",
@@ -27,7 +27,7 @@ static int check_cr(uint8 *s, int n)
 	return -1;
 }
 
-static int coco_test(FILE *f, char *t, const int start)
+static int coco_test(xmp_file f, char *t, const int start)
 {
 	uint8 x, buf[20];
 	uint32 y;
@@ -39,7 +39,7 @@ static int coco_test(FILE *f, char *t, const int start)
 	if (x != 0x84 && x != 0x88)
 		return -1;
 
-	fread(buf, 1, 20, f);		/* read title */
+	xmp_fread(buf, 1, 20, f);		/* read title */
 	if (check_cr(buf, 20) != 0)
 		return -1;
 
@@ -77,14 +77,14 @@ static int coco_test(FILE *f, char *t, const int start)
 		if (lps + lsz - 1 > len)
 			return -1;
 
-		fread(buf, 1, 11, f);
+		xmp_fread(buf, 1, 11, f);
 		if (check_cr(buf, 11) != 0)
 			return -1;
 
 		read8(f);	/* unused */
 	}
 
-	fseek(f, start + 1, SEEK_SET);
+	xmp_fseek(f, start + 1, SEEK_SET);
 	read_title(f, t, 20);
 
 #if 0
@@ -160,7 +160,7 @@ static void fix_effect(struct xmp_event *e)
 	}
 }
 
-static int coco_load(struct module_data *m, FILE *f, const int start)
+static int coco_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -205,7 +205,7 @@ static int coco_load(struct module_data *m, FILE *f, const int start)
 		if (mod->xxs[i].lpe)
 			mod->xxs[i].lpe -= 1;
 		mod->xxs[i].flg = mod->xxs[i].lps > 0 ?  XMP_SAMPLE_LOOP : 0;
-		fread(mod->xxi[i].name, 1, 11, f);
+		xmp_fread(mod->xxi[i].name, 1, 11, f);
 		for (j = 0; j < 11; j++) {
 			if (mod->xxi[i].name[j] == 0x0d)
 				mod->xxi[i].name[j] = 0;
@@ -224,7 +224,7 @@ static int coco_load(struct module_data *m, FILE *f, const int start)
 
 	/* Sequence */
 
-	fseek(f, start + seq_ptr, SEEK_SET);
+	xmp_fseek(f, start + seq_ptr, SEEK_SET);
 	for (i = 0; ; i++) {
 		uint8 x = read8(f);
 		if (x == 0xff)
@@ -267,7 +267,7 @@ static int coco_load(struct module_data *m, FILE *f, const int start)
 		if (mod->xxi[i].nsm == 0)
 			continue;
 
-		fseek(f, start + smp_ptr[i], SEEK_SET);
+		xmp_fseek(f, start + smp_ptr[i], SEEK_SET);
 		load_sample(m, f, SAMPLE_FLAG_VIDC, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 

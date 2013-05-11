@@ -15,8 +15,8 @@
 #define MAGIC_IMPS	MAGIC4('I','M','P','S')
 
 
-static int it_test (FILE *, char *, const int);
-static int it_load (struct module_data *, FILE *, const int);
+static int it_test (xmp_file, char *, const int);
+static int it_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader it_loader = {
     "Impulse Tracker (IT)",
@@ -33,7 +33,7 @@ struct tm *localtime_r(const time_t *timep, struct tm *result)
 }
 #endif
 
-static int it_test(FILE *f, char *t, const int start)
+static int it_test(xmp_file f, char *t, const int start)
 {
     if (read32b(f) != MAGIC_IMPM)
 	return -1;
@@ -80,8 +80,8 @@ static const uint8 fx[] = {
 };
 
 
-int itsex_decompress8 (FILE *, void *, int, int);
-int itsex_decompress16 (FILE *, void *, int, int);
+int itsex_decompress8 (xmp_file, void *, int, int);
+int itsex_decompress16 (xmp_file, void *, int, int);
 
 
 static void xlat_fx(int c, struct xmp_event *e, uint8 *arpeggio_val,
@@ -242,7 +242,7 @@ static void fix_name(uint8 *s, int l)
 }
 
 
-static int it_load(struct module_data *m, FILE *f, const int start)
+static int it_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int r, c, i, j, k, pat_len;
@@ -269,7 +269,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
     /* Load and convert header */
     read32b(f);		/* magic */
 
-    fread(&ifh.name, 26, 1, f);
+    xmp_fread(&ifh.name, 26, 1, f);
     ifh.hilite_min = read8(f);
     ifh.hilite_maj = read8(f);
 
@@ -294,8 +294,8 @@ static int it_load(struct module_data *m, FILE *f, const int start)
     ifh.msgofs = read32l(f);
     ifh.rsvd = read32l(f);
 
-    fread(&ifh.chpan, 64, 1, f);
-    fread(&ifh.chvol, 64, 1, f);
+    xmp_fread(&ifh.chpan, 64, 1, f);
+    xmp_fread(&ifh.chvol, 64, 1, f);
 
     strncpy(mod->name, (char *)ifh.name, XMP_NAME_SIZE);
     mod->len = ifh.ordnum;
@@ -337,7 +337,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 
 	mod->xxc[i].vol = ifh.chvol[i];
     }
-    fread(mod->xxo, 1, mod->len, f);
+    xmp_fread(mod->xxo, 1, mod->len, f);
 
     new_fx = ifh.flags & IT_OLD_FX ? 0 : 1;
 
@@ -448,8 +448,8 @@ static int it_load(struct module_data *m, FILE *f, const int start)
     if (ifh.special & IT_HAS_MSG) {
 	if ((m->comment = malloc(ifh.msglen + 1)) == NULL)
 	    return -1;
-	i = ftell(f);
-	fseek(f, start + ifh.msgofs, SEEK_SET);
+	i = xmp_ftell(f);
+	xmp_fseek(f, start + ifh.msgofs, SEEK_SET);
 
 	D_(D_INFO "Message length : %d", ifh.msglen);
 
@@ -463,7 +463,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 	}
 	m->comment[j] = 0;
 
-	fseek(f, i, SEEK_SET);
+	xmp_fseek(f, i, SEEK_SET);
     }
 
     INSTRUMENT_INIT();
@@ -481,10 +481,10 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 
 	if ((ifh.flags & IT_USE_INST) && (ifh.cmwt >= 0x200)) {
 	    /* New instrument format */
-	    fseek(f, start + pp_ins[i], SEEK_SET);
+	    xmp_fseek(f, start + pp_ins[i], SEEK_SET);
 
 	    i2h.magic = read32b(f);
-	    fread(&i2h.dosname, 12, 1, f);
+	    xmp_fread(&i2h.dosname, 12, 1, f);
 	    i2h.zero = read8(f);
 	    i2h.nna = read8(f);
 	    i2h.dct = read8(f);
@@ -501,7 +501,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 
 	    i2h.nos = read8(f);
 	    i2h.rsvd1 = read8(f);
-	    fread(&i2h.name, 26, 1, f);
+	    xmp_fread(&i2h.name, 26, 1, f);
 
 	    fix_name(i2h.name, 26);
 
@@ -510,7 +510,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 	    i2h.mch = read8(f);
 	    i2h.mpr = read8(f);
 	    i2h.mbnk = read16l(f);
-	    fread(&i2h.keys, 240, 1, f);
+	    xmp_fread(&i2h.keys, 240, 1, f);
 
 	    copy_adjust(xxi->name, i2h.name, 25);
 	    xxi->rls = i2h.fadeout << 5;
@@ -626,10 +626,10 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 
 	} else if (ifh.flags & IT_USE_INST) {
 /* Old instrument format */
-	    fseek(f, start + pp_ins[i], SEEK_SET);
+	    xmp_fseek(f, start + pp_ins[i], SEEK_SET);
 
 	    i1h.magic = read32b(f);
-	    fread(&i1h.dosname, 12, 1, f);
+	    xmp_fread(&i1h.dosname, 12, 1, f);
 
 	    i1h.zero = read8(f);
 	    i1h.flags = read8(f);
@@ -646,14 +646,14 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 	    i1h.nos = read8(f);
 	    i1h.rsvd2 = read8(f);
 
-	    fread(&i1h.name, 26, 1, f);
+	    xmp_fread(&i1h.name, 26, 1, f);
 
 	    fix_name(i1h.name, 26);
 
-	    fread(&i1h.rsvd3, 6, 1, f);
-	    fread(&i1h.keys, 240, 1, f);
-	    fread(&i1h.epoint, 200, 1, f);
-	    fread(&i1h.enode, 50, 1, f);
+	    xmp_fread(&i1h.rsvd3, 6, 1, f);
+	    xmp_fread(&i1h.keys, 240, 1, f);
+	    xmp_fread(&i1h.epoint, 200, 1, f);
+	    xmp_fread(&i1h.enode, 50, 1, f);
 
 	    copy_adjust(xxi->name, i1h.name, 25);
 
@@ -738,15 +738,15 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 
 	if (~ifh.flags & IT_USE_INST)
 	    mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-	fseek(f, start + pp_smp[i], SEEK_SET);
+	xmp_fseek(f, start + pp_smp[i], SEEK_SET);
 
 	ish.magic = read32b(f);
-	fread(&ish.dosname, 12, 1, f);
+	xmp_fread(&ish.dosname, 12, 1, f);
 	ish.zero = read8(f);
 	ish.gvl = read8(f);
 	ish.flags = read8(f);
 	ish.vol = read8(f);
-	fread(&ish.name, 26, 1, f);
+	xmp_fread(&ish.name, 26, 1, f);
 
 	fix_name(ish.name, 26);
 
@@ -829,7 +829,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 	if (ish.flags & IT_SMP_SAMPLE && xxs->len > 1) {
 	    int cvt = 0;
 
-	    fseek(f, start + ish.sample_ptr, SEEK_SET);
+	    xmp_fseek(f, start + ish.sample_ptr, SEEK_SET);
 
 	    if (~ish.convert & IT_CVT_SIGNED)
 		cvt |= SAMPLE_FLAG_UNS;
@@ -883,7 +883,7 @@ static int it_load(struct module_data *m, FILE *f, const int start)
 		mod->xxp[i]->index[j] = i * mod->chn;
 	    continue;
 	}
-	fseek(f, start + pp_pat[i], SEEK_SET);
+	xmp_fseek(f, start + pp_pat[i], SEEK_SET);
 	pat_len = read16l(f) /* - 4*/;
 	mod->xxp[i]->rows = read16l(f);
 	TRACK_ALLOC (i);

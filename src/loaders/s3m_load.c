@@ -66,8 +66,8 @@
 #define MAGIC_SCRI	MAGIC4('S','C','R','I')
 #define MAGIC_SCRS	MAGIC4('S','C','R','S')
 
-static int s3m_test (FILE *, char *, const int);
-static int s3m_load (struct module_data *, FILE *, const int);
+static int s3m_test (xmp_file, char *, const int);
+static int s3m_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader s3m_loader = {
     "Scream Tracker 3 (S3M)",
@@ -75,13 +75,13 @@ const struct format_loader s3m_loader = {
     s3m_load
 };
 
-static int s3m_test(FILE *f, char *t, const int start)
+static int s3m_test(xmp_file f, char *t, const int start)
 {
-    fseek(f, start + 44, SEEK_SET);
+    xmp_fseek(f, start + 44, SEEK_SET);
     if (read32b(f) != MAGIC_SCRM)
 	return -1;
 
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 28);
 
     return 0;
@@ -183,7 +183,7 @@ static void xlat_fx(int c, struct xmp_event *e, uint8 *arpeggio_val)
 }
 
 
-static int s3m_load(struct module_data *m, FILE *f, const int start)
+static int s3m_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int c, r, i;
@@ -201,7 +201,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&sfh.name, 28, 1, f);		/* Song name */
+    xmp_fread(&sfh.name, 28, 1, f);		/* Song name */
     read8(f);				/* 0x1a */
     sfh.type = read8(f);		/* File type */
     read16l(f);				/* Reserved */
@@ -221,7 +221,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
     read32l(f);				/* Reserved */
     read32l(f);				/* Reserved */
     sfh.special = read16l(f);		/* Ptr to special custom data */
-    fread(sfh.chset, 32, 1, f);		/* Channel settings */
+    xmp_fread(sfh.chset, 32, 1, f);		/* Channel settings */
 
 #if 0
     if (sfh.magic != MAGIC_SCRM)
@@ -270,7 +270,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
     }
     mod->trk = mod->pat * mod->chn;
 
-    fread(mod->xxo, 1, mod->len, f);
+    xmp_fread(mod->xxo, 1, mod->len, f);
 
     for (i = 0; i < mod->ins; i++)
 	pp_ins[i] = read16l(f);
@@ -352,7 +352,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 	if (!pp_pat[i])
 	    continue;
 
-	fseek(f, start + pp_pat[i] * 16, SEEK_SET);
+	xmp_fseek(f, start + pp_pat[i] * 16, SEEK_SET);
 	r = 0;
 	pat_len = read16l(f) - 2;
 
@@ -412,7 +412,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 
     for (i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-	fseek(f, start + pp_ins[i] * 16, SEEK_SET);
+	xmp_fseek(f, start + pp_ins[i] * 16, SEEK_SET);
 	x8 = read8(f);
 	mod->xxi[i].sub[0].pan = 0x80;
 	mod->xxi[i].sub[0].sid = i;
@@ -420,16 +420,16 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 	if (x8 >= 2) {
 	    /* OPL2 FM instrument */
 
-	    fread(&sah.dosname, 12, 1, f);	/* DOS file name */
-	    fread(&sah.rsvd1, 3, 1, f);		/* 0x00 0x00 0x00 */
-	    fread(&sah.reg, 12, 1, f);		/* Adlib registers */
+		xmp_fread(&sah.dosname, 12, 1, f);	/* DOS file name */
+		xmp_fread(&sah.rsvd1, 3, 1, f);		/* 0x00 0x00 0x00 */
+		xmp_fread(&sah.reg, 12, 1, f);		/* Adlib registers */
 	    sah.vol = read8(f);
 	    sah.dsk = read8(f);
 	    read16l(f);
 	    sah.c2spd = read16l(f);		/* C 4 speed */
 	    read16l(f);
-	    fread(&sah.rsvd4, 12, 1, f);	/* Reserved */
-	    fread(&sah.name, 28, 1, f);		/* Instrument name */
+	    xmp_fread(&sah.rsvd4, 12, 1, f);	/* Reserved */
+	    xmp_fread(&sah.name, 28, 1, f);		/* Instrument name */
 	    sah.magic = read32b(f);		/* 'SCRI' */
 
 	    if (sah.magic != MAGIC_SCRI) {
@@ -450,7 +450,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 	    continue;
 	}
 
-	fread(&sih.dosname, 13, 1, f);		/* DOS file name */
+	xmp_fread(&sih.dosname, 13, 1, f);		/* DOS file name */
 	sih.memseg = read16l(f);		/* Pointer to sample data */
 	sih.length = read32l(f);		/* Length */
 	sih.loopbeg = read32l(f);		/* Loop begin */
@@ -461,11 +461,11 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 	sih.flags = read8(f);		/* Loop/stereo/16bit samples flags */
 	sih.c2spd = read16l(f);			/* C 4 speed */
 	sih.rsvd2 = read16l(f);			/* Reserved */
-	fread(&sih.rsvd3, 4, 1, f);		/* Reserved */
+	xmp_fread(&sih.rsvd3, 4, 1, f);		/* Reserved */
 	sih.int_gp = read16l(f);		/* Internal - GUS pointer */
 	sih.int_512 = read16l(f);		/* Internal - SB pointer */
 	sih.int_last = read32l(f);		/* Internal - SB index */
-	fread(&sih.name, 28, 1, f);		/* Instrument name */
+	xmp_fread(&sih.name, 28, 1, f);		/* Instrument name */
 	sih.magic = read32b(f);			/* 'SCRS' */
 
 	if (x8 == 1 && sih.magic != MAGIC_SCRS) {
@@ -508,7 +508,7 @@ static int s3m_load(struct module_data *m, FILE *f, const int start)
 
 	c2spd_to_note(sih.c2spd, &mod->xxi[i].sub[0].xpo, &mod->xxi[i].sub[0].fin);
 
-	fseek(f, start + 16L * sih.memseg, SEEK_SET);
+	xmp_fseek(f, start + 16L * sih.memseg, SEEK_SET);
 	load_sample(m, f, (sfh.ffi - 1) * SAMPLE_FLAG_UNS, &mod->xxs[i], NULL);
     }
 

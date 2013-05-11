@@ -19,8 +19,8 @@
 #define MAGIC_MED4	MAGIC4('M','E','D',4)
 #undef MED4_DEBUG
 
-static int med4_test(FILE *, char *, const int);
-static int med4_load (struct module_data *, FILE *, const int);
+static int med4_test(xmp_file, char *, const int);
+static int med4_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader med4_loader = {
 	"MED 2.10 MED4 (MED)",
@@ -28,7 +28,7 @@ const struct format_loader med4_loader = {
 	med4_load
 };
 
-static int med4_test(FILE *f, char *t, const int start)
+static int med4_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) !=  MAGIC_MED4)
 		return -1;
@@ -121,7 +121,7 @@ static void fix_effect(struct xmp_event *event)
 	}
 }
 
-static inline uint8 read4(FILE *f, int *read4_ctl)
+static inline uint8 read4(xmp_file f, int *read4_ctl)
 {
 	static uint8 b = 0;
 	uint8 ret;
@@ -138,7 +138,7 @@ static inline uint8 read4(FILE *f, int *read4_ctl)
 	return ret;
 }
 
-static inline uint16 read12b(FILE *f, int *read4_ctl)
+static inline uint16 read12b(xmp_file f, int *read4_ctl)
 {
 	uint32 a, b, c;
 
@@ -159,7 +159,7 @@ struct temp_inst {
 
 struct temp_inst temp_inst[32];
 
-static int med4_load(struct module_data *m, FILE *f, const int start)
+static int med4_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, k, y;
@@ -184,11 +184,11 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 	/*
 	 * Check if we have a MEDV chunk at the end of the file
 	 */
-	pos = ftell(f);
-	fseek(f, 0, SEEK_END);
-	if (ftell(f) > 2000) {
-		fseek(f, -1023, SEEK_CUR);
-		fread(buf, 1, 1024, f);
+	pos = xmp_ftell(f);
+	xmp_fseek(f, 0, SEEK_END);
+	if (xmp_ftell(f) > 2000) {
+		xmp_fseek(f, -1023, SEEK_CUR);
+		xmp_fread(buf, 1, 1024, f);
 		for (i = 0; i < 1012; i++) {
 			if (!memcmp(buf + i, "MEDV\000\000\000\004", 8)) {
 				vermaj = *(buf + i + 10);
@@ -197,7 +197,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 			}
 		}
 	}
-	fseek(f, start + pos, SEEK_SET);
+	xmp_fseek(f, start + pos, SEEK_SET);
 
 	snprintf(mod->type, XMP_NAME_SIZE, "MED %d.%02d MED4", vermaj, vermin);
 
@@ -265,7 +265,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 #ifdef MED4_DEBUG
 	printf("pat=%x len=%x\n", mod->pat, mod->len);
 #endif
-	fread(mod->xxo, 1, mod->len, f);
+	xmp_fread(mod->xxo, 1, mod->len, f);
 
 	/* From MED V3.00 docs:
 	 *
@@ -296,9 +296,9 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 	if (vermaj == 2)	/* Happy.med has tempo 5 but loads as 6 */
 		mod->spd = flags & 0x20 ? 5 : 6;
 
-	fseek(f, 20, SEEK_CUR);
+	xmp_fseek(f, 20, SEEK_CUR);
 
-	fread(trkvol, 1, 16, f);
+	xmp_fread(trkvol, 1, 16, f);
 	read8(f);		/* master vol */
 
 	MODULE_INFO();
@@ -310,7 +310,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 
 	read8(f);
 	mod->chn = read8(f);;
-	fseek(f, -2, SEEK_CUR);
+	xmp_fseek(f, -2, SEEK_CUR);
 	mod->trk = mod->chn * mod->pat;
 
 	PATTERN_INIT();
@@ -466,7 +466,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 	mask <<= 1;	/* no instrument #0 */
 
 	/* obtain number of samples */
-	pos = ftell(f);
+	pos = xmp_ftell(f);
 	num_smp = 0;
 	{
 		int _len, _type, _mask = mask;
@@ -479,19 +479,19 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 			_len = read16b(f);
 			_type = (int16)read16b(f);
 
-			_pos = ftell(f);
+			_pos = xmp_ftell(f);
 
 			if (_type == 0 || _type == -2) {
 				num_smp++;
 			} else if (_type == -1) {
-				fseek(f, 20, SEEK_CUR);
+				xmp_fseek(f, 20, SEEK_CUR);
 				num_smp += read16b(f);
 			}
 
-			fseek(f, _pos + _len, SEEK_SET);
+			xmp_fseek(f, _pos + _len, SEEK_SET);
 		}
 	}
-	fseek(f, pos, SEEK_SET);
+	xmp_fseek(f, pos, SEEK_SET);
 
 	mod->smp = num_smp;
 
@@ -521,7 +521,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 
 		if (type == -2) {			/* Hybrid */
 			int length, type;
-			int pos = ftell(f);
+			int pos = xmp_ftell(f);
 
 			read32b(f);	/* ? - MSH 00 */
 			read16b(f);	/* ? - ffff */
@@ -534,10 +534,10 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 			synth.volspeed = read8(f);
 			synth.wfspeed = read8(f);
 			synth.wforms = read16b(f);
-			fread(synth.voltbl, 1, synth.voltbllen, f);;
-			fread(synth.wftbl, 1, synth.wftbllen, f);;
+			xmp_fread(synth.voltbl, 1, synth.voltbllen, f);;
+			xmp_fread(synth.wftbl, 1, synth.wftbllen, f);;
 
-			fseek(f,  pos + read32b(f), SEEK_SET);
+			xmp_fseek(f,  pos + read32b(f), SEEK_SET);
 			length = read32b(f);
 			type = read16b(f);
 
@@ -583,7 +583,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 		}
 
 		if (type == -1) {		/* Synthetic */
-			int pos = ftell(f);
+			int pos = xmp_ftell(f);
 
 			read32b(f);	/* ? - MSH 00 */
 			read16b(f);	/* ? - ffff */
@@ -596,8 +596,8 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 			synth.volspeed = read8(f);
 			synth.wfspeed = read8(f);
 			synth.wforms = read16b(f);
-			fread(synth.voltbl, 1, synth.voltbllen, f);;
-			fread(synth.wftbl, 1, synth.wftbllen, f);;
+			xmp_fread(synth.voltbl, 1, synth.voltbllen, f);;
+			xmp_fread(synth.wftbl, 1, synth.wftbllen, f);;
 			for (j = 0; j < synth.wforms; j++)
 				synth.wf[j] = read32b(f);
 
@@ -631,7 +631,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 				mod->xxi[i].sub[j].sid = smp_idx;
 				mod->xxi[i].sub[j].fin = 0 /*exp_smp.finetune*/;
 
-				fseek(f, pos + synth.wf[j], SEEK_SET);
+				xmp_fseek(f, pos + synth.wf[j], SEEK_SET);
 /*printf("pos=%lx tell=%lx ", pos, ftell(f));*/
 
 				mod->xxs[smp_idx].len = read16b(f) * 2;
@@ -652,12 +652,12 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 			m->med_wav_table[i] = calloc(1, synth.wftbllen);
 			memcpy(m->med_wav_table[i], synth.wftbl, synth.wftbllen);
 
-			fseek(f, pos + length, SEEK_SET);
+			xmp_fseek(f, pos + length, SEEK_SET);
 			continue;
 		}
 
 		if (type != 0) {
-			fseek(f, length, SEEK_CUR);
+			xmp_fseek(f, length, SEEK_CUR);
 			continue;
 		}
 
@@ -691,7 +691,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 	read16b(f);	/* unknown */
 
 	/* IFF-like section */
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		int32 id, size, s2, pos, ver;
 
 		if ((id = read32b(f)) < 0)
@@ -700,7 +700,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 		if ((size = read32b(f)) < 0)
 			break;
 
-		pos = ftell(f);
+		pos = xmp_ftell(f);
 
 		switch (id) {
 		case MAGIC4('M','E','D','V'):
@@ -711,7 +711,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 		case MAGIC4('A','N','N','O'):
 			/* annotation */
 			s2 = size < 1023 ? size : 1023;
-			fread(buf, 1, s2, f);
+			xmp_fread(buf, 1, s2, f);
 			buf[s2] = 0;
 			D_(D_INFO "Annotation: %s\n", buf);
 			break;
@@ -720,7 +720,7 @@ static int med4_load(struct module_data *m, FILE *f, const int start)
 			break;
 		}
 
-		fseek(f, pos + size, SEEK_SET);
+		xmp_fseek(f, pos + size, SEEK_SET);
 	}
 
 	return 0;

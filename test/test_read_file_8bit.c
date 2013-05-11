@@ -2,15 +2,15 @@
 
 TEST(test_read_file_8bit)
 {
-	FILE *f;
+	xmp_file f;
 	int x;
 
-	f = fopen("data/test.mmcmp", "rb");
+	f = xmp_fopen("data/test.mmcmp", "rb");
 	fail_unless(f != NULL, "can't open data file");
 
 	x = read8(f);
 	fail_unless(x == 0x0000007a, "read error");
 
-	fclose(f);
+	xmp_fclose(f);
 }
 END_TEST

@@ -19,8 +19,8 @@
 
 extern struct list_head *checked_format;
 
-static int pw_test(FILE *, char *, const int);
-static int pw_load(struct module_data *, FILE *, const int);
+static int pw_test(xmp_file, char *, const int);
+static int pw_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader pw_loader = {
 	"prowizard",
@@ -30,7 +30,7 @@ const struct format_loader pw_loader = {
 
 #define BUF_SIZE 0x10000
 
-int pw_test_format(FILE *f, char *t, const int start,
+int pw_test_format(xmp_file f, char *t, const int start,
 		   struct xmp_test_info *info)
 {
 	unsigned char *b;
@@ -38,7 +38,7 @@ int pw_test_format(FILE *f, char *t, const int start,
 	int s = BUF_SIZE;
 
 	b = calloc(1, BUF_SIZE);
-	fread(b, s, 1, f);
+	xmp_fread(b, s, 1, f);
 
 	while ((extra = pw_check(b, s, info)) > 0) {
 		unsigned char *buf = realloc(b, s + extra);
@@ -47,7 +47,7 @@ int pw_test_format(FILE *f, char *t, const int start,
 			return -1;
 		}
 		b = buf;
-		fread(b + s, extra, 1, f);
+		xmp_fread(b + s, extra, 1, f);
 		s += extra;
 	}
 
@@ -56,52 +56,37 @@ int pw_test_format(FILE *f, char *t, const int start,
 	return extra == 0 ? 0 : -1;
 }
 
-static int pw_test(FILE *f, char *t, const int start)
+static int pw_test(xmp_file f, char *t, const int start)
 {
 	return pw_test_format(f, t, start, NULL);
 }
 
-static int pw_load(struct module_data *m, FILE *f, const int start)
+static int pw_load(struct module_data *m, xmp_file fin, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
 	struct mod_header mh;
+	xmp_file f;
 	uint8 mod_event[4];
 	char *name;
-	char tmp[PATH_MAX];
 	int i, j;
-	int fd;
 
 	/* Prowizard depacking */
 
-	if (get_temp_dir(tmp, PATH_MAX) < 0)
-		return -1;
+	f = xmp_fopen_mem(NULL, 0);
 
-	strncat(tmp, "xmp_XXXXXX", PATH_MAX);
-
-	if ((fd = mkstemp(tmp)) < 0)
-		return -1;
-
-	if (pw_wizardry(fileno(f), fd, &name) < 0) {
-		close(fd);
-		unlink(tmp);
+	if (pw_wizardry(fin, f, &name) < 0) {
+		xmp_fclose(f);
 		return -1;
 	}
-
-	if ((f = fdopen(fd, "w+b")) == NULL) {
-		close(fd);
-		unlink(tmp);
-		return -1;
-	}
-
 
 	/* Module loading */
 
 	LOAD_INIT();
 
-	fread(&mh.name, 20, 1, f);
+	xmp_fread(&mh.name, 20, 1, f);
 	for (i = 0; i < 31; i++) {
-		fread(&mh.ins[i].name, 22, 1, f);
+		xmp_fread(&mh.ins[i].name, 22, 1, f);
 		mh.ins[i].size = read16b(f);
 		mh.ins[i].finetune = read8(f);
 		mh.ins[i].volume = read8(f);
@@ -110,8 +95,8 @@ static int pw_load(struct module_data *m, FILE *f, const int start)
 	}
 	mh.len = read8(f);
 	mh.restart = read8(f);
-	fread(&mh.order, 128, 1, f);
-	fread(&mh.magic, 4, 1, f);
+	xmp_fread(&mh.order, 128, 1, f);
+	xmp_fread(&mh.magic, 4, 1, f);
 
 	if (memcmp(mh.magic, "M.K.", 4))
 		goto err;
@@ -174,7 +159,7 @@ static int pw_load(struct module_data *m, FILE *f, const int start)
 		TRACK_ALLOC(i);
 		for (j = 0; j < (64 * 4); j++) {
 			event = &EVENT(i, j % 4, j / 4);
-			fread(mod_event, 1, 4, f);
+			xmp_fread(mod_event, 1, 4, f);
 			cvt_pt_event(event, mod_event);
 		}
 	}
@@ -188,12 +173,10 @@ static int pw_load(struct module_data *m, FILE *f, const int start)
 		load_sample(m, f, 0, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 
-	fclose(f);
-	unlink(tmp);
+	xmp_fclose(f);
 	return 0;
 
 err:
-	fclose(f);
-	unlink(tmp);
+    xmp_fclose(f);
 	return -1;
 }

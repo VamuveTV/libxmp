@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_kris(FILE *in, FILE *out)
+static int depack_kris(xmp_file in, xmp_file out)
 {
 	uint8 tmp[1024];
 	uint8 c3;
@@ -29,15 +29,15 @@ static int depack_kris(FILE *in, FILE *out)
 	memset(tdata, 0, 512 << 8);
 
 	pw_move_data(out, in, 20);			/* title */
-	fseek(in, 2, SEEK_CUR);
+	xmp_fseek(in, 2, SEEK_CUR);
 
 	/* 31 samples */
 	for (i = 0; i < 31; i++) {
 		/* sample name */
-		fread(tmp, 22, 1, in);
+		xmp_fread(tmp, 22, 1, in);
 		if (tmp[0] == 0x01)
 			tmp[0] = 0x00;
-		fwrite(tmp, 22, 1, out);
+		xmp_fwrite(tmp, 22, 1, out);
 
 		write16b(out, size = read16b(in));	/* size */
 		ssize += size * 2;
@@ -82,7 +82,7 @@ static int depack_kris(FILE *in, FILE *out)
 	/* Track data ... */
 	for (i = 0; i <= (maxtaddr / 256); i += 1) {
 		memset(tmp, 0, 1024);
-		fread(tmp, 256, 1, in);
+		xmp_fread(tmp, 256, 1, in);
 
 		for (j = 0; j < 64 * 4; j += 4) {
 			note = tmp[j];
@@ -111,7 +111,7 @@ static int depack_kris(FILE *in, FILE *out)
 			memcpy(p + 8, &tdata[taddr[i][2] / 256][j], 4);
 			memcpy(p + 12, &tdata[taddr[i][3] / 256][j], 4);
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* sample data */

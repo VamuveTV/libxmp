@@ -21,8 +21,8 @@
 #include <unistd.h>
 
 
-static int alm_test (FILE *, char *, const int);
-static int alm_load (struct module_data *, FILE *, const int);
+static int alm_test (xmp_file, char *, const int);
+static int alm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader alm_loader = {
     "Aley Keptr (ALM)",
@@ -30,11 +30,11 @@ const struct format_loader alm_loader = {
     alm_load
 };
 
-static int alm_test(FILE *f, char *t, const int start)
+static int alm_test(xmp_file f, char *t, const int start)
 {
     char buf[7];
 
-    if (fread(buf, 1, 7, f) < 7)
+    if (xmp_fread(buf, 1, 7, f) < 7)
 	return -1;
 
     if (memcmp(buf, "ALEYMOD", 7) && memcmp(buf, "ALEY MO", 7))
@@ -57,22 +57,22 @@ struct alm_file_header {
 
 #define NAME_SIZE 255
 
-static int alm_load(struct module_data *m, FILE *f, const int start)
+static int alm_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
     struct alm_file_header afh;
     struct xmp_event *event;
-    struct stat stat;
+    int file_size;
     uint8 b;
     char *basename;
     char filename[NAME_SIZE];
     char modulename[NAME_SIZE];
-    FILE *s;
+    xmp_file s;
 
     LOAD_INIT();
 
-    fread(&afh.id, 7, 1, f);
+    xmp_fread(&afh.id, 7, 1, f);
 
     if (!strncmp((char *)afh.id, "ALEYMOD", 7))		/* Version 1.0 */
 	mod->spd = afh.speed / 2;
@@ -83,7 +83,7 @@ static int alm_load(struct module_data *m, FILE *f, const int start)
     afh.speed = read8(f);
     afh.length = read8(f);
     afh.restart = read8(f);
-    fread(&afh.order, 128, 1, f);
+    xmp_fread(&afh.order, 128, 1, f);
 
     mod->len = afh.length;
     mod->rst = afh.restart;
@@ -130,21 +130,21 @@ static int alm_load(struct module_data *m, FILE *f, const int start)
     for (i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 	snprintf(filename, NAME_SIZE, "%s.%d", basename, i + 1);
-	s = fopen (filename, "rb");
+	s = xmp_fopen (filename, "rb");
 
 	if (!(mod->xxi[i].nsm = (s != NULL)))
 	    continue;
 
-	fstat (fileno (s), &stat);
+	file_size = xmp_fsize(s);
 	b = read8(s);		/* Get first octet */
-	mod->xxs[i].len = stat.st_size - 5 * !b;
+	mod->xxs[i].len = file_size - 5 * !b;
 
 	if (!b) {		/* Instrument with header */
 	    mod->xxs[i].lps = read16l(f);
 	    mod->xxs[i].lpe = read16l(f);
 	    mod->xxs[i].flg = mod->xxs[i].lpe > mod->xxs[i].lps ? XMP_SAMPLE_LOOP : 0;
 	} else {
-	    fseek(s, 0, SEEK_SET);
+	    xmp_fseek(s, 0, SEEK_SET);
 	}
 
 	mod->xxi[i].sub[0].pan = 0x80;
@@ -157,7 +157,7 @@ static int alm_load(struct module_data *m, FILE *f, const int start)
 
 	load_sample(m, s, SAMPLE_FLAG_UNS, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 
-	fclose(s);
+	xmp_fclose(s);
     }
 
     /* ALM is LRLR, not LRRL */

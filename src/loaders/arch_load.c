@@ -13,8 +13,8 @@
 #define MAGIC_MNAM	MAGIC4('M','N','A','M')
 
 
-static int arch_test (FILE *, char *, const int);
-static int arch_load (struct module_data *, FILE *, const int);
+static int arch_test (xmp_file, char *, const int);
+static int arch_load (struct module_data *, xmp_file, const int);
 
 
 const struct format_loader arch_loader = {
@@ -48,14 +48,14 @@ static uint8 convert_vol(uint8 vol) {
 }
 #endif
 
-static int arch_test(FILE *f, char *t, const int start)
+static int arch_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_MUSX)
 		return -1;
 
 	read32l(f);
 
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		uint32 id = read32b(f);
 		uint32 len = read32l(f);
 
@@ -64,7 +64,7 @@ static int arch_test(FILE *f, char *t, const int start)
 			return 0;
 		}
 
-		fseek(f, len, SEEK_CUR);
+		xmp_fseek(f, len, SEEK_CUR);
 	}
 
 	read_title(f, t, 0);
@@ -147,7 +147,7 @@ static void fix_effect(struct xmp_event *e)
 	}
 }
 
-static void get_tinf(struct module_data *m, int size, FILE *f, void *parm)
+static void get_tinf(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct local_data *data = (struct local_data *)parm;
 	int x;
@@ -164,20 +164,20 @@ static void get_tinf(struct module_data *m, int size, FILE *f, void *parm)
 	data->day = ((x & 0xf0) >> 4) * 10 + (x & 0x0f);
 }
 
-static void get_mvox(struct module_data *m, int size, FILE *f, void *parm)
+static void get_mvox(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
 	mod->chn = read32l(f);
 }
 
-static void get_ster(struct module_data *m, int size, FILE *f, void *parm)
+static void get_ster(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
 	int i;
 
-	fread(data->ster, 1, 8, f);
+	xmp_fread(data->ster, 1, 8, f);
 	
 	for (i=0; i < mod->chn; i++) {
 		if (data->ster[i] > 0 && data->ster[i] < 8) {
@@ -186,51 +186,51 @@ static void get_ster(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_mnam(struct module_data *m, int size, FILE *f, void *parm)
+static void get_mnam(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
-	fread(mod->name, 1, 32, f);
+	xmp_fread(mod->name, 1, 32, f);
 }
 
-static void get_anam(struct module_data *m, int size, FILE *f, void *parm)
+static void get_anam(struct module_data *m, int size, xmp_file f, void *parm)
 {
-	/*fread(m->author, 1, 32, f); */
+	/*xmp_fread(m->author, 1, 32, f); */
 }
 
-static void get_mlen(struct module_data *m, int size, FILE *f, void *parm)
+static void get_mlen(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
 	mod->len = read32l(f);
 }
 
-static void get_pnum(struct module_data *m, int size, FILE *f, void *parm)
+static void get_pnum(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
 	mod->pat = read32l(f);
 }
 
-static void get_plen(struct module_data *m, int size, FILE *f, void *parm)
+static void get_plen(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct local_data *data = (struct local_data *)parm;
 
-	fread(data->rows, 1, 64, f);
+	xmp_fread(data->rows, 1, 64, f);
 }
 
-static void get_sequ(struct module_data *m, int size, FILE *f, void *parm)
+static void get_sequ(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
-	fread(mod->xxo, 1, 128, f);
+	xmp_fread(mod->xxo, 1, 128, f);
 
 	set_type(m, "Archimedes Tracker");
 
 	MODULE_INFO();
 }
 
-static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -269,7 +269,7 @@ static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
 	i++;
 }
 
-static void get_samp(struct module_data *m, int size, FILE *f, void *parm)
+static void get_samp(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -299,7 +299,7 @@ static void get_samp(struct module_data *m, int size, FILE *f, void *parm)
 		/* should usually be 0x14 but zero is not unknown */
 		int name_len = read32l(f);
 		if (name_len < 32)
-			fread(mod->xxi[i].name, 1, name_len, f);
+			xmp_fread(mod->xxi[i].name, 1, name_len, f);
 	}
 	read32l(f);	/* SVOL */
 	read32l(f);
@@ -350,7 +350,7 @@ static void get_samp(struct module_data *m, int size, FILE *f, void *parm)
 	data->max_ins++;
 }
 
-static int arch_load(struct module_data *m, FILE *f, const int start)
+static int arch_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	iff_handle handle;
@@ -385,7 +385,7 @@ static int arch_load(struct module_data *m, FILE *f, const int start)
 	iff_set_quirk(handle, IFF_LITTLE_ENDIAN);
 
 	/* Load IFF chunks */
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		iff_chunk(handle, m, f, &data);
 	}
 

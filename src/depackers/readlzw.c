@@ -230,7 +230,7 @@ unsigned char *convert_lzw_dynamic(unsigned char *data_in,
 	return d;
 }
 
-unsigned char *read_lzw_dynamic(FILE *f, uint8 *buf, int max_bits,int use_rle,
+unsigned char *read_lzw_dynamic(xmp_file f, uint8 *buf, int max_bits,int use_rle,
 			unsigned long in_len, unsigned long orig_len, int q)
 {
 	uint8 *buf2, *b;
@@ -247,13 +247,13 @@ unsigned char *read_lzw_dynamic(FILE *f, uint8 *buf, int max_bits,int use_rle,
 		return NULL;
 	}
 
-	pos = ftell(f);
-	fread(buf2, 1, in_len, f);
+	pos = xmp_ftell(f);
+	xmp_fread(buf2, 1, in_len, f);
 	b = _convert_lzw_dynamic(buf2, max_bits, use_rle, in_len, orig_len, q, data);
 	memcpy(buf, b, orig_len);
 	size = q & NOMARCH_QUIRK_ALIGN4 ? ALIGN4(data->nomarch_input_size) :
 						data->nomarch_input_size;
-	fseek(f, pos + size, SEEK_SET);
+	xmp_fseek(f, pos + size, SEEK_SET);
 	free(b);
 	free(buf2);
 	free(data);

@@ -15,13 +15,11 @@ TEST(test_api_load_module)
 	ret = xmp_load_module(ctx, "/doesntexist");
 	fail_unless(ret == -XMP_ERROR_SYSTEM, "module doesn't exist");
 	fail_unless(errno == ENOENT, "errno code");
-	xmp_release_module(ctx);
 
 	/* is directory */
 	ret = xmp_load_module(ctx, "data");
 	fail_unless(ret == -XMP_ERROR_SYSTEM, "try to load directory");
 	fail_unless(errno == EISDIR, "errno code");
-	xmp_release_module(ctx);
 
 #if 0
 	/* no read permission */
@@ -37,7 +35,6 @@ TEST(test_api_load_module)
 	ret = xmp_load_module(ctx, ".read_test");
 	fail_unless(ret == -XMP_ERROR_FORMAT, "small file");
 	unlink(".read_test");
-	xmp_release_module(ctx);
 
 	/* invalid format */
 	ret = xmp_load_module(ctx, "Makefile");

@@ -12,7 +12,7 @@
 #include "prowiz.h"
 
 
-static int depack_crb(FILE *in, FILE *out)
+static int depack_crb(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4;
 	uint8 ptable[128];
@@ -57,7 +57,7 @@ static int depack_crb(FILE *in, FILE *out)
 	for (i = 0; i < pat_max; i++) {
 		memset(pat, 0, 1024);
 		for (j = 0; j < 4; j++) {
-			taddr[i * 4 + j] = ftell(in);
+			taddr[i * 4 + j] = xmp_ftell(in);
 			for (k = 0; k < 64; k++) {
 				int y = k * 16 + j * 4;
 
@@ -73,8 +73,8 @@ static int depack_crb(FILE *in, FILE *out)
 					c2 = read8(in);
 					c3 = read8(in);
 					c4 = read8(in);
-					l = ftell(in);
-					fseek(in, taddr[((c3 << 8) + c4) / 4],
+					l = xmp_ftell(in);
+					xmp_fseek(in, taddr[((c3 << 8) + c4) / 4],
 								SEEK_SET);
 					for (m = 0; m < 64; m++) {
 						int x = m * 16 + j * 4;
@@ -92,7 +92,7 @@ static int depack_crb(FILE *in, FILE *out)
 						pat[x + 2] = read8(in);
 						pat[x + 3] = read8(in);
 					}
-					fseek (in, l, 0);	/* SEEK_SET */
+					xmp_fseek (in, l, 0);	/* SEEK_SET */
 					k += 100;
 					continue;
 				}
@@ -102,7 +102,7 @@ static int depack_crb(FILE *in, FILE *out)
 				pat[y + 3] = read8(in);
 			}
 		}
-		fwrite (pat, 1024, 1, out);
+		xmp_fwrite (pat, 1024, 1, out);
 	}
 
 	/* sample data */

@@ -15,8 +15,8 @@
 #define MAGIC_EMIC	MAGIC4('E','M','I','C')
 
 
-static int emod_test (FILE *, char *, const int);
-static int emod_load (struct module_data *, FILE *, const int);
+static int emod_test (xmp_file, char *, const int);
+static int emod_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader emod_loader = {
     "Quadra Composer (EMOD)",
@@ -24,7 +24,7 @@ const struct format_loader emod_loader = {
     emod_load
 };
 
-static int emod_test(FILE *f, char *t, const int start)
+static int emod_test(xmp_file f, char *t, const int start)
 {
     if (read32b(f) != MAGIC_FORM)
 	return -1;
@@ -46,15 +46,15 @@ static int emod_test(FILE *f, char *t, const int start)
 }
 
 
-static void get_emic(struct module_data *m, int size, FILE *f, void *parm)
+static void get_emic(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i, ver;
     uint8 reorder[256];
 
     ver = read16b(f);
-    fread(mod->name, 1, 20, f);
-    fseek(f, 20, SEEK_CUR);
+    xmp_fread(mod->name, 1, 20, f);
+    xmp_fseek(f, 20, SEEK_CUR);
     mod->bpm = read8(f);
     mod->ins = read8(f);
     mod->smp = mod->ins;
@@ -72,7 +72,7 @@ static void get_emic(struct module_data *m, int size, FILE *f, void *parm)
 	read8(f);		/* num */
 	mod->xxi[i].sub[0].vol = read8(f);
 	mod->xxs[i].len = 2 * read16b(f);
-	fread(mod->xxi[i].name, 1, 20, f);
+	xmp_fread(mod->xxi[i].name, 1, 20, f);
 	mod->xxs[i].flg = read8(f) & 1 ? XMP_SAMPLE_LOOP : 0;
 	mod->xxi[i].sub[0].fin = read8(f);
 	mod->xxs[i].lps = 2 * read16b(f);
@@ -103,7 +103,7 @@ static void get_emic(struct module_data *m, int size, FILE *f, void *parm)
 	PATTERN_ALLOC(i);
 	mod->xxp[i]->rows = read8(f) + 1;
 	TRACK_ALLOC(i);
-	fseek(f, 20, SEEK_CUR);		/* skip name */
+	xmp_fseek(f, 20, SEEK_CUR);		/* skip name */
 	read32b(f);			/* ptr */
     }
 
@@ -116,7 +116,7 @@ static void get_emic(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i, j, k;
@@ -156,7 +156,7 @@ static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static void get_8smp(struct module_data *m, int size, FILE *f, void *parm)
+static void get_8smp(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i;
@@ -169,7 +169,7 @@ static void get_8smp(struct module_data *m, int size, FILE *f, void *parm)
 }
 
 
-static int emod_load(struct module_data *m, FILE *f, const int start)
+static int emod_load(struct module_data *m, xmp_file f, const int start)
 {
     iff_handle handle;
 
@@ -189,7 +189,7 @@ static int emod_load(struct module_data *m, FILE *f, const int start)
     iff_register(handle, "8SMP", get_8smp);
 
     /* Load IFF chunks */
-    while (!feof(f)) {
+    while (!xmp_feof(f)) {
 	iff_chunk(handle, m, f, NULL);
     }
 

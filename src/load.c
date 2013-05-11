@@ -36,29 +36,24 @@ void load_prologue(struct context_data *);
 void load_epilogue(struct context_data *);
 
 
-struct tmpfilename {
-	char *name;
-	struct list_head list;
-};
-
-int decrunch_arc	(FILE *, FILE *);
-int decrunch_arcfs	(FILE *, FILE *);
-int decrunch_sqsh	(FILE *, FILE *);
-int decrunch_pp		(FILE *, FILE *);
-int decrunch_mmcmp	(FILE *, FILE *);
-int decrunch_muse	(FILE *, FILE *);
-int decrunch_lzx	(FILE *, FILE *);
-int decrunch_oxm	(FILE *, FILE *);
-int decrunch_xfd	(FILE *, FILE *);
-int decrunch_s404	(FILE *, FILE *);
-int decrunch_zip	(FILE *, FILE *);
-int decrunch_gzip	(FILE *, FILE *);
-int decrunch_compress	(FILE *, FILE *);
-int decrunch_bzip2	(FILE *, FILE *);
-int decrunch_xz		(FILE *, FILE *);
-int decrunch_lha	(FILE *, FILE *);
-int decrunch_zoo	(FILE *, FILE *);
-int test_oxm		(FILE *);
+int decrunch_arc	(xmp_file, xmp_file);
+int decrunch_arcfs	(xmp_file, xmp_file);
+int decrunch_sqsh	(xmp_file, xmp_file);
+int decrunch_pp		(xmp_file, xmp_file);
+int decrunch_mmcmp	(xmp_file, xmp_file);
+int decrunch_muse	(xmp_file, xmp_file);
+int decrunch_lzx	(xmp_file, xmp_file);
+int decrunch_oxm	(xmp_file, xmp_file);
+int decrunch_xfd	(xmp_file, xmp_file);
+int decrunch_s404	(xmp_file, xmp_file);
+int decrunch_zip	(xmp_file, xmp_file);
+int decrunch_gzip	(xmp_file, xmp_file);
+int decrunch_compress	(xmp_file, xmp_file);
+int decrunch_bzip2	(xmp_file, xmp_file);
+int decrunch_xz		(xmp_file, xmp_file);
+int decrunch_lha	(xmp_file, xmp_file);
+int decrunch_zoo	(xmp_file, xmp_file);
+int test_oxm		(xmp_file);
 char *test_xfd		(unsigned char *, int);
 
 enum {
@@ -94,16 +89,16 @@ enum {
 
 #define BUFLEN 16384
 
-static void set_md5sum(FILE *f, unsigned char *digest)
+static void set_md5sum(xmp_file f, unsigned char *digest)
 {
 	unsigned char buf[BUFLEN];
 	MD5_CTX ctx;
 	int bytes_read;
 
-	fseek(f, 0, SEEK_SET);
+	xmp_fseek(f, 0, SEEK_SET);
 
 	MD5Init(&ctx);
-	while ((bytes_read = fread(buf, 1, BUFLEN, f)) > 0) {
+	while ((bytes_read = xmp_fread(buf, 1, BUFLEN, f)) > 0) {
 		MD5Update(&ctx, buf, bytes_read);
 	}
 	MD5Final(&ctx);
@@ -111,26 +106,20 @@ static void set_md5sum(FILE *f, unsigned char *digest)
 	memcpy(digest, ctx.digest, 16);
 }
 
-static int decrunch(struct list_head *head, FILE **f, char **s, int ttl)
+static int decrunch(xmp_file *f, char **s, int ttl)
 {
     unsigned char b[1024];
     char *cmd;
-    FILE *t;
-    int fd, builtin, res;
-    char *temp2, tmp[PATH_MAX];
-    struct tmpfilename *temp;
+    xmp_file t;
+    int builtin, res;
+    char *temp2;
     int headersize;
 
     cmd = NULL;
     builtin = res = 0;
 
-    if (get_temp_dir(tmp, PATH_MAX) < 0)
-	return 0;
-
-    strncat(tmp, "xmp_XXXXXX", PATH_MAX);
-
-    fseek(*f, 0, SEEK_SET);
-    if ((headersize = fread(b, 1, 1024, *f)) < 100)	/* minimum valid file size */
+    xmp_fseek(*f, 0, SEEK_SET);
+    if ((headersize = xmp_fread(b, 1, 1024, *f)) < 100)	/* minimum valid file size */
 	return 0;
 
 #if defined __AMIGA__ && !defined __AROS__
@@ -232,7 +221,7 @@ static int decrunch(struct list_head *head, FILE **f, char **s, int ttl)
 	}
     }
 
-    fseek(*f, 0, SEEK_SET);
+    xmp_fseek(*f, 0, SEEK_SET);
 
     if (builtin == 0 && cmd == NULL)
 	return 0;
@@ -245,21 +234,7 @@ static int decrunch(struct list_head *head, FILE **f, char **s, int ttl)
 
     D_(D_WARN "Depacking file... ");
 
-    temp = calloc(sizeof (struct tmpfilename), 1);
-    if (!temp) {
-	D_(D_CRIT "calloc failed");
-	return -1;
-    }
-
-    temp->name = strdup(tmp);
-    if ((fd = mkstemp(temp->name)) < 0) {
-	D_(D_CRIT "failed");
-	return -1;
-    }
-
-    list_add_tail(&temp->list, head);
-
-    if ((t = fdopen(fd, "w+b")) == NULL) {
+    if ((t = xmp_fopen_mem(NULL, 0)) == NULL) {
 	D_(D_CRIT "failed");
 	return -1;
     }
@@ -286,11 +261,11 @@ static int decrunch(struct list_head *head, FILE **f, char **s, int ttl)
 	if ((p = popen(line, "r")) == NULL) {
 #endif
 	    D_(D_CRIT "failed");
-	    fclose(t);
+	    xmp_fclose(t);
 	    return -1;
 	}
 	while ((n = fread(buf, 1, BSIZE, p)) > 0)
-	    fwrite(buf, 1, n, t);
+	    xmp_fwrite(buf, 1, n, t);
 	pclose (p);
     } else {
 	switch (builtin) {
@@ -352,88 +327,41 @@ static int decrunch(struct list_head *head, FILE **f, char **s, int ttl)
 
     if (res < 0) {
 	D_(D_CRIT "failed");
-	fclose(t);
+	xmp_fclose(t);
 	return -1;
     }
 
     D_(D_INFO "done");
 
-    fclose(*f);
     *f = t;
  
     if (!--ttl) {
 	    return -1;
     }
     
-    temp2 = strdup(temp->name);
-    res = decrunch(head, f, &temp->name, ttl);
-    free(temp2);
-    /* Mirko: temp is now deallocated in unlink_tempfiles()
-     * not a problem, since unlink_tempfiles() is called after decrunch
-     * in loader routines
-     *
-     * free(temp);
-     */
+    res = decrunch(f, &temp2, ttl);
 
     return res;
 }
 
 
-/*
- * Windows doesn't allow you to unlink an open file, so we changed the
- * temp file cleanup system to remove temporary files after we close it
- */
-static void unlink_tempfiles(struct list_head *head)
+int xmp_test_module_f(xmp_file f, struct xmp_test_info *info)
 {
-	struct tmpfilename *li;
-	struct list_head *tmp;
-
-	/* can't use list_for_each when freeing the node! */
-	for (tmp = head->next; tmp != head; ) {
-		li = list_entry(tmp, struct tmpfilename, list);
-		D_(D_INFO "unlink tmpfile %s", li->name);
-		unlink(li->name);
-		free(li->name);
-		list_del(&li->list);
-		tmp = tmp->next;
-		free(li);
-	}
-}
-
-
-int xmp_test_module(char *path, struct xmp_test_info *info)
-{
-	FILE *f;
-	struct stat st;
+	int file_size;
 	char buf[XMP_NAME_SIZE];
 	int i;
-	struct list_head tmpfiles_list;
 	int ret = -XMP_ERROR_FORMAT;;
-
-	if (stat(path, &st) < 0)
-		return -XMP_ERROR_SYSTEM;
-
-	if (S_ISDIR(st.st_mode)) {
-		errno = EISDIR;
-		return -XMP_ERROR_SYSTEM;
-	}
-
-	if ((f = fopen(path, "rb")) == NULL)
-		return -XMP_ERROR_SYSTEM;
-
-	INIT_LIST_HEAD(&tmpfiles_list);
-
-	if (decrunch(&tmpfiles_list, &f, &path, DECRUNCH_MAX) < 0) {
+	char *path = NULL;
+	xmp_file fin = f;
+	
+	if (decrunch(&f, &path, DECRUNCH_MAX) < 0) {
 		ret = -XMP_ERROR_DEPACK;
 		goto err;
 	}
 
-	if (fstat(fileno(f), &st) < 0) {/* get size after decrunch */
-		ret = -XMP_ERROR_DEPACK;
-		goto err;
-	}
+	file_size = xmp_fsize(f);
 
-	if (st.st_size < 256) {		/* set minimum valid module size */
+	if (file_size < 256) {		/* set minimum valid module size */
 		ret = -XMP_ERROR_FORMAT;
 		goto err;
 	}
@@ -444,34 +372,54 @@ int xmp_test_module(char *path, struct xmp_test_info *info)
 	}
 
 	for (i = 0; format_loader[i] != NULL; i++) {
-		fseek(f, 0, SEEK_SET);
+		xmp_fseek(f, 0, SEEK_SET);
 		if (format_loader[i]->test(f, buf, 0) == 0) {
 			int is_prowizard = 0;
 
 			if (strcmp(format_loader[i]->name, "prowizard") == 0) {
-				fseek(f, 0, SEEK_SET);
+			    xmp_fseek(f, 0, SEEK_SET);
 				pw_test_format(f, buf, 0, info);
 				is_prowizard = 1;
 			}
 
-			fclose(f);
-
-			unlink_tempfiles(&tmpfiles_list);
 			if (info != NULL && !is_prowizard) {
 				strncpy(info->name, buf, XMP_NAME_SIZE);
 				strncpy(info->type, format_loader[i]->name,
 							XMP_NAME_SIZE);
 			}
-			return 0;
+			ret = 0;
 		}
 	}
 
     err:
-	fclose(f);
-	unlink_tempfiles(&tmpfiles_list);
+	if (f != fin)
+	    xmp_fclose(f);
 	return ret;
 }
 
+int xmp_test_module(char *path, struct xmp_test_info *info) 
+{
+	struct stat st;
+
+	if (stat(path, &st) < 0)
+		return -XMP_ERROR_SYSTEM;
+
+	if (S_ISDIR(st.st_mode)) {
+		errno = EISDIR;
+		return -XMP_ERROR_SYSTEM;
+	}
+
+	xmp_file f = xmp_fopen(path, "rb");
+	if (f == NULL) {
+		return -XMP_ERROR_INTERNAL;
+	}
+
+	int err = xmp_test_module_f(f, info);
+
+	xmp_fclose(f);
+
+	return err;
+}
 
 /* FIXME: ugly code, check allocations */
 static void split_name(char *s, char **d, char **b)
@@ -492,57 +440,45 @@ static void split_name(char *s, char **d, char **b)
 	}
 }
 
-int xmp_load_module(xmp_context opaque, char *path)
+int xmp_load_module_f(xmp_context opaque, xmp_file f, char *path)
 {
 	struct context_data *ctx = (struct context_data *)opaque;
 	struct module_data *m = &ctx->m;
-	FILE *f;
 	int i;
-	struct stat st;
-	struct list_head tmpfiles_list;
+	int file_size;
 	int test_result, load_result;
+	xmp_file fin = f;
 
 	D_(D_WARN "path = %s", path);
 
-	if (stat(path, &st) < 0)
-		return -XMP_ERROR_SYSTEM;
-
-	if (S_ISDIR(st.st_mode)) {
-		errno = EISDIR;
-		return -XMP_ERROR_SYSTEM;
+	D_(D_INFO "decrunch");
+	if (decrunch(&f, &path, DECRUNCH_MAX) < 0) {
+		if (f != fin)
+			xmp_fclose(f);
+		return -XMP_ERROR_DEPACK;
 	}
 
-	if ((f = fopen(path, "rb")) == NULL)
-		return -XMP_ERROR_SYSTEM;
+	file_size = xmp_fsize(f);
 
-	INIT_LIST_HEAD(&tmpfiles_list);
-
-	D_(D_INFO "decrunch");
-	if (decrunch(&tmpfiles_list, &f, &path, DECRUNCH_MAX) < 0)
-		goto err_depack;
-
-	if (fstat(fileno(f), &st) < 0)
-		goto err_depack;
-
-	if (st.st_size < 256) {			/* get size after decrunch */
-		fclose(f);
-		unlink_tempfiles(&tmpfiles_list);
+	if (file_size < 256) {			/* get size after decrunch */
+		if (f != fin)
+			xmp_fclose(f);
 		return -XMP_ERROR_FORMAT;
 	}
 
 	split_name(path, &m->dirname, &m->basename);
-	m->filename = path;	/* For ALM, SSMT, etc */
-	m->size = st.st_size;
+	m->filename = strdup(path);	/* For ALM, SSMT, etc */
+	m->size = file_size;
 
 	load_prologue(ctx);
 
 	D_(D_WARN "load");
 	test_result = load_result = -1;
 	for (i = 0; format_loader[i] != NULL; i++) {
-		fseek(f, 0, SEEK_SET);
+		xmp_fseek(f, 0, SEEK_SET);
 		test_result = format_loader[i]->test(f, NULL, 0);
 		if (test_result == 0) {
-			fseek(f, 0, SEEK_SET);
+			xmp_fseek(f, 0, SEEK_SET);
 			D_(D_WARN "load format: %s", format_loader[i]->name);
 			load_result = format_loader[i]->loader(m, f, 0);
 			break;
@@ -551,12 +487,13 @@ int xmp_load_module(xmp_context opaque, char *path)
 
 	set_md5sum(f, m->md5);
 
-	fclose(f);
-	unlink_tempfiles(&tmpfiles_list);
+	if (f != fin)
+		xmp_fclose(f);
 
 	if (test_result < 0) {
 		free(m->basename);
 		free(m->dirname);
+		free(m->filename);
 		return -XMP_ERROR_FORMAT;
 	}
 
@@ -573,11 +510,30 @@ int xmp_load_module(xmp_context opaque, char *path)
 	load_epilogue(ctx);
 
 	return 0;
+}
 
-    err_depack:
-	fclose(f);
-	unlink_tempfiles(&tmpfiles_list);
-	return -XMP_ERROR_DEPACK;
+int xmp_load_module(xmp_context opaque, char *path) 
+{
+	struct stat st;
+
+	if (stat(path, &st) < 0)
+		return -XMP_ERROR_SYSTEM;
+
+	if (S_ISDIR(st.st_mode)) {
+		errno = EISDIR;
+		return -XMP_ERROR_SYSTEM;
+	}
+
+	xmp_file f = xmp_fopen(path, "rb");
+	if (f == NULL) {
+		return -XMP_ERROR_INTERNAL;
+	}
+
+	int err = xmp_load_module_f(opaque, f, path);
+
+	xmp_fclose(f);
+
+	return err;
 }
 
 void xmp_release_module(xmp_context opaque)
@@ -637,6 +593,7 @@ void xmp_release_module(xmp_context opaque)
 	D_("free dirname/basename");
 	free(m->dirname);
 	free(m->basename);
+	free(m->filename);
 }
 
 void xmp_scan_module(xmp_context opaque)

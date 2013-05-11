@@ -36,3 +36,22 @@ XMP_4.1 {
     xmp_play_buffer;
 } XMP_4.0;
 
+XMP_999.0 {
+  global:
+    xmp_test_module_f;
+    xmp_load_module_f;
+    xmp_load_module;
+    xmp_fopen;
+    xmp_fopen_mem;
+    xmp_fclose;
+    xmp_fwrite;
+    xmp_fread;
+    xmp_fsize;
+    xmp_ftell;
+    xmp_fseek;
+    xmp_feof;
+    xmp_fputc;
+    xmp_fgetc;
+    xmp_fungetc;
+} XMP_4.1;
+

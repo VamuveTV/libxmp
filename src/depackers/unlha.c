@@ -143,7 +143,7 @@ struct LhADecrLZ {
 
 struct LhADecrData {
   int        error;
-  FILE       *in;
+  xmp_file   in;
   char       *text;
   uint16     DicBit;
 
@@ -177,7 +177,7 @@ static inline void fillbuf(struct LhADecrData *dat, uint8 n)
   {
     n -= dat->bitcount;
     dat->bitbuf = (dat->bitbuf << dat->bitcount) + (dat->subbitbuf >> (CHAR_BIT - dat->bitcount));
-    dat->subbitbuf = fgetc(dat->in);
+    dat->subbitbuf = read8(dat->in);
 
     dat->bitcount = CHAR_BIT;
   }
@@ -1322,7 +1322,7 @@ static void decode_start_lz5(struct LhADecrData *dat)
 
 #endif
 
-static int32 LhA_Decrunch(FILE *in, FILE *out, int size, uint32 Method)
+static int32 LhA_Decrunch(xmp_file in, xmp_file out, int size, uint32 Method)
 {
   struct LhADecrData *dd;
   int32 err = 0;
@@ -1430,7 +1430,7 @@ static int32 LhA_Decrunch(FILE *in, FILE *out, int size, uint32 Method)
 	
           if(c <= UCHAR_MAX)
           {
-            text[dd->loc++] = fputc(c, out);
+            text[dd->loc++] = xmp_fputc(c, out);
             dd->loc &= dicsiz;
             dd->count++;
           }
@@ -1441,7 +1441,7 @@ static int32 LhA_Decrunch(FILE *in, FILE *out, int size, uint32 Method)
             dd->count += c;
             while(c--)
             {
-              text[dd->loc++] = fputc(text[i++ & dicsiz], out);
+              text[dd->loc++] = xmp_fputc(text[i++ & dicsiz], out);
               dd->loc &= dicsiz;
             }
           }
@@ -1605,13 +1605,13 @@ struct lha_data {
  *
  */
 
-static int get_header(FILE *f, struct lha_data *data)
+static int get_header(xmp_file f, struct lha_data *data)
 {
 	uint8 buf[21];
 	int size, level, namelen;
 
 	memset(data, 0, sizeof(struct lha_data));
-	if (fread(buf, 1, 21, f) != 21)
+	if (xmp_fread(buf, 1, 21, f) != 21)
 		return -1;
 	level = buf[20];
 
@@ -1622,9 +1622,9 @@ static int get_header(FILE *f, struct lha_data *data)
 		data->packed_size = readmem32l(buf + 7);
 		data->original_size = readmem32l(buf + 11);
 		namelen = read8(f);
-		fread(data->name, 1, namelen, f);
+		xmp_fread(data->name, 1, namelen, f);
 		data->crc = read16l(f);
-		fseek(f, size + 2 - 24 - namelen, SEEK_CUR);
+		xmp_fseek(f, size + 2 - 24 - namelen, SEEK_CUR);
 		break;
 	case 1:
 		size = buf[0];
@@ -1632,11 +1632,11 @@ static int get_header(FILE *f, struct lha_data *data)
 		data->packed_size = readmem32l(buf + 7);
 		data->original_size = readmem32l(buf + 11);
 		namelen = read8(f);
-		fread(data->name, 1, namelen, f);
+		xmp_fread(data->name, 1, namelen, f);
 		data->crc = read16l(f);
-		fseek(f, size + 2 - 26 - namelen, SEEK_CUR);
+		xmp_fseek(f, size + 2 - 26 - namelen, SEEK_CUR);
 		while ((size = read16l(f)) != 0) {
-			fseek(f, size - 2, SEEK_CUR);
+			xmp_fseek(f, size - 2, SEEK_CUR);
 		}
 		break;
 	case 2:
@@ -1645,7 +1645,7 @@ static int get_header(FILE *f, struct lha_data *data)
 		data->packed_size = readmem32l(buf + 7);
 		data->original_size = readmem32l(buf + 11);
 		data->crc = read16l(f);
-		fseek(f, size + 2 - 21, SEEK_CUR);
+		xmp_fseek(f, size + 2 - 21, SEEK_CUR);
 		break;
 	case 3:
 		data->method = readmem32b(buf + 2);
@@ -1654,7 +1654,7 @@ static int get_header(FILE *f, struct lha_data *data)
 		data->crc = read16l(f);
 		read8(f);		/* skip OS id */
 		size = read32l(f);
-		fseek(f, size - 21, SEEK_CUR);
+		xmp_fseek(f, size - 21, SEEK_CUR);
 		break;
 	default:
 		return -1;
@@ -1663,7 +1663,7 @@ static int get_header(FILE *f, struct lha_data *data)
 	return 0;
 }
 
-int decrunch_lha(FILE *in, FILE *out)
+int decrunch_lha(xmp_file in, xmp_file out)
 {
 	struct lha_data data;
 
@@ -1680,7 +1680,7 @@ printf("position = %lx\n", ftell(in));
 #endif
 
 		if (exclude_match(data.name)) {
-			fseek(in, data.packed_size, SEEK_CUR);
+			xmp_fseek(in, data.packed_size, SEEK_CUR);
 			continue;
 		}
 		return LhA_Decrunch(in, out, data.original_size, data.method);

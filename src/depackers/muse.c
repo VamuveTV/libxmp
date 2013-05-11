@@ -12,11 +12,11 @@
 #include "inflate.h"
 
 
-int decrunch_muse(FILE *f, FILE *fo)                          
+int decrunch_muse(xmp_file f, xmp_file fo)
 {                                                          
 	uint32 checksum;
   
-	fseek(f, 24, SEEK_SET);
+	xmp_fseek(f, 24, SEEK_SET);
 	inflate(f, fo, &checksum, 0);
 
 	return 0;

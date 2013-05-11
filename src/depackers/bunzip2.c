@@ -39,6 +39,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include "xmp.h"
 
 /* Constants for huffman coding */
 #define MAX_GROUPS			6
@@ -74,7 +75,7 @@ typedef struct {
 	/* State for interrupting output loop */
 	int writeCopies,writePos,writeRunCountdown,writeCount,writeCurrent;
 	/* I/O tracking data (file handles, buffers, positions, etc.) */
-	FILE *in,*out;
+	xmp_file in, out;
 	int inbufCount,inbufPos /*,outbufPos*/;
 	unsigned char *inbuf /*,*outbuf*/;
 	unsigned int inbufBitCount, inbufBits;
@@ -100,7 +101,7 @@ static unsigned int get_bits(bunzip_data *bd, char bits_wanted)
 	while (bd->inbufBitCount<bits_wanted) {
 		/* If we need to read more data from file into byte buffer, do so */
 		if(bd->inbufPos==bd->inbufCount) {
-			if((bd->inbufCount = fread(bd->inbuf, 1, IOBUF_SIZE, bd->in)) <= 0)
+			if((bd->inbufCount = xmp_fread(bd->inbuf, 1, IOBUF_SIZE, bd->in)) <= 0)
 				longjmp(bd->jmpbuf,RETVAL_UNEXPECTED_INPUT_EOF);
 			bd->inbufPos=0;
 		}
@@ -505,7 +506,7 @@ decode_next_byte:
 /* Allocate the structure, read file header.  If in_fd==-1, inbuf must contain
    a complete bunzip file (len bytes long).  If in_fd!=-1, inbuf and len are
    ignored, and data is read from file handle into temporary buffer. */
-static int start_bunzip(bunzip_data **bdp, FILE *in, char *inbuf, int len)
+static int start_bunzip(bunzip_data **bdp, xmp_file in, char *inbuf, int len)
 {
 	bunzip_data *bd;
 	unsigned int i,j,c;
@@ -549,7 +550,7 @@ static int start_bunzip(bunzip_data **bdp, FILE *in, char *inbuf, int len)
 
 /* Example usage: decompress src_fd to dst_fd.  (Stops at end of bzip data,
    not end of file.) */
-int decrunch_bzip2(FILE *src, FILE *dst)
+int decrunch_bzip2(xmp_file src, xmp_file dst)
 {
 	char *outbuf;
 	bunzip_data *bd;
@@ -559,7 +560,7 @@ int decrunch_bzip2(FILE *src, FILE *dst)
 	if(!(i=start_bunzip(&bd,src,0,0))) {
 		for(;;) {
 			if((i=read_bunzip(bd,outbuf,IOBUF_SIZE)) <= 0) break;
-			if(i!=fwrite(outbuf,1,i,dst)) {
+			if(i!=xmp_fwrite(outbuf,1,i,dst)) {
 				i=RETVAL_UNEXPECTED_OUTPUT_EOF;
 				break;
 			}

@@ -12,7 +12,7 @@
 #include "prowiz.h"
 
 
-static int depack_AC1D(FILE *in, FILE *out)
+static int depack_AC1D(xmp_file in, xmp_file out)
 {
 	uint8 NO_NOTE = 0xff;
 	uint8 c1, c2, c3, c4;
@@ -63,14 +63,14 @@ static int depack_AC1D(FILE *in, FILE *out)
 	write8(out, npos);		/* write number of pattern pos */
 	write8(out, ntk_byte);		/* write "noisetracker" byte */
 
-	fseek(in, 0x300, SEEK_SET);	/* go to pattern table .. */
+	xmp_fseek(in, 0x300, SEEK_SET);	/* go to pattern table .. */
 	pw_move_data(out, in, 128);	/* pattern table */
 	
 	write32b(out, PW_MOD_MAGIC);	/* M.K. */
 
 	/* pattern data */
 	for (i = 0; i < npat; i++) {
-		fseek(in, paddr[i], SEEK_SET);
+		xmp_fseek(in, paddr[i], SEEK_SET);
 		tsize1 = read32b(in);
 		tsize2 = read32b(in);
 		tsize3 = read32b(in);
@@ -121,11 +121,11 @@ static int depack_AC1D(FILE *in, FILE *out)
 				tmp[x + 3] = fxp;
 			}
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* sample data */
-	fseek(in, saddr, 0);
+	xmp_fseek(in, saddr, 0);
 	pw_move_data(out, in, ssize);
 
 	return 0;

@@ -36,14 +36,14 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 		fseek (in, 0x50 + i * 30, 0);
 		/* write name */
 		for (j = 0; j < 22; j++) {
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			fwrite (&c1, 1, 1, out);
 		}
 		/* size */
 		fseek (in, i * 4 + 1, 0);
-		fread (&c0, 1, 1, in);
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c0, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		c2 /= 2;
 		c3 = c1 / 2;
 		if ((c3 * 2) != c1)
@@ -55,14 +55,14 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 		fwrite (&c2, 1, 1, out);
 		ssize += (((c3 << 8) + c2) * 2);
 		/* finetune */
-		fread (&c1, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		/* volume */
-		fread (&c1, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		/* loop start */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		c2 /= 2;
 		c3 = c1 / 2;
 		if ((c3 * 2) != c1)
@@ -70,8 +70,8 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 		fwrite (&c3, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 		/* loop size */
-		fread (&c1, 1, 1, in);
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 	}
@@ -83,7 +83,7 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 	free (tmp);
 
 	/* pattern list size */
-	fread (&PatPos, 1, 1, in);
+	xmp_fread (&PatPos, 1, 1, in);
 	fwrite (&PatPos, 1, 1, out);
 
 	/* ntk byte */
@@ -94,7 +94,7 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 	/* read and write pattern list */
 	Max = 0x00;
 	for (i = 0; i < PatPos; i++) {
-		fread (&c1, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		if (c1 > Max)
 			Max = c1;
@@ -120,7 +120,7 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 	tmp = (uint8 *) malloc (1024);
 	for (i = 0; i <= Max; i++) {
 		memset(tmp, 0, 1024);
-		fread (tmp, 1024, 1, in);
+		xmp_fread (tmp, 1024, 1, in);
 		for (j = 0; j < 256; j++) {
 			if (tmp[(j * 4)] == 0xff) {
 				if (tmp[(j * 4) + 1] != 0xfe)
@@ -181,7 +181,7 @@ void Depack_SoundFX13 (FILE * in, FILE * out)
 	/* sample data */
 	tmp = (uint8 *) malloc (ssize);
 	memset(tmp, 0, ssize);
-	fread (tmp, ssize, 1, in);
+	xmp_fread (tmp, ssize, 1, in);
 	fwrite (tmp, ssize, 1, out);
 	free (tmp);
 	fflush (stdout);

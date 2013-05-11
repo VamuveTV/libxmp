@@ -337,7 +337,7 @@ printf("load_fixed_huffman()\n");
   return 0;
 }
 
-static int load_codes(FILE *in, struct bitstream_t *bitstream, int *lengths, int count, int *hclen_code_length, int *hclen_code, struct huffman_tree_t *huffman_tree)
+static int load_codes(xmp_file in, struct bitstream_t *bitstream, int *lengths, int count, int *hclen_code_length, int *hclen_code, struct huffman_tree_t *huffman_tree)
 {
   int r,t,c,x;
   int code,curr_code;
@@ -359,7 +359,7 @@ static int load_codes(FILE *in, struct bitstream_t *bitstream, int *lengths, int
       if (hclen_code_length[t]==0) continue;
       while (bitstream->bitptr<hclen_code_length[t])
       {
-        bitstream->holding=reverse[getc(in)]+(bitstream->holding<<8);
+        bitstream->holding=reverse[xmp_fgetc(in)]+(bitstream->holding<<8);
         bitstream->bitptr+=8;
       }
 
@@ -396,7 +396,7 @@ static int load_codes(FILE *in, struct bitstream_t *bitstream, int *lengths, int
 
       if (bitstream->bitptr<2)
       {
-        bitstream->holding=reverse[getc(in)]+(bitstream->holding<<8);
+        bitstream->holding=reverse[xmp_fgetc(in)]+(bitstream->holding<<8);
         bitstream->bitptr+=8;
       }
 
@@ -412,7 +412,7 @@ static int load_codes(FILE *in, struct bitstream_t *bitstream, int *lengths, int
     {
       if (bitstream->bitptr<3)
       {
-        bitstream->holding=reverse[getc(in)]+(bitstream->holding<<8);
+        bitstream->holding=reverse[xmp_fgetc(in)]+(bitstream->holding<<8);
         bitstream->bitptr+=8;
       }
 
@@ -429,7 +429,7 @@ static int load_codes(FILE *in, struct bitstream_t *bitstream, int *lengths, int
     {
       if (bitstream->bitptr<7)
       {
-        bitstream->holding=reverse[getc(in)]+(bitstream->holding<<8);
+        bitstream->holding=reverse[xmp_fgetc(in)]+(bitstream->holding<<8);
         bitstream->bitptr+=8;
       }
 
@@ -539,7 +539,7 @@ static int load_codes(FILE *in, struct bitstream_t *bitstream, int *lengths, int
   return 0;
 }
 
-static int load_dynamic_huffman(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstream, struct huffman_tree_t *huffman_tree_len, struct huffman_tree_t *huffman_tree_dist)
+static int load_dynamic_huffman(xmp_file in, struct huffman_t *huffman, struct bitstream_t *bitstream, struct huffman_tree_t *huffman_tree_len, struct huffman_tree_t *huffman_tree_dist)
 {
   int hlit,hdist,hclen;
   int hclen_code_lengths[19];
@@ -552,7 +552,7 @@ static int load_dynamic_huffman(FILE *in, struct huffman_t *huffman, struct bits
 
   while (bitstream->bitptr<14)
   {
-    bitstream->holding=reverse[getc(in)]+(bitstream->holding<<8);
+    bitstream->holding=reverse[xmp_fgetc(in)]+(bitstream->holding<<8);
     bitstream->bitptr+=8;
   }
 
@@ -591,7 +591,7 @@ static int load_dynamic_huffman(FILE *in, struct huffman_t *huffman, struct bits
   {
     if (bitstream->bitptr<3)
     {
-      bitstream->holding=reverse[getc(in)]+(bitstream->holding<<8);
+      bitstream->holding=reverse[xmp_fgetc(in)]+(bitstream->holding<<8);
       bitstream->bitptr+=8;
     }
 
@@ -712,7 +712,7 @@ static int load_dynamic_huffman(FILE *in, struct huffman_t *huffman, struct bits
   return 0;
 }
 
-int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstream, struct huffman_tree_t *huffman_tree_len, struct huffman_tree_t *huffman_tree_dist, FILE *out, struct inflate_data *data)
+int decompress(xmp_file in, struct huffman_t *huffman, struct bitstream_t *bitstream, struct huffman_tree_t *huffman_tree_len, struct huffman_tree_t *huffman_tree_dist, xmp_file out, struct inflate_data *data)
 {
   int code=0,len,dist;
   int t,r;
@@ -744,7 +744,7 @@ int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstrea
       {
         /* bitstream->holding+=(getc(in)<<bitstream->bitptr); */
         /* bitstream->bitptr+=8; */
-        bitstream->holding=getc(in);
+        bitstream->holding=xmp_fgetc(in);
         bitstream->bitptr=8;
       }
 #ifdef DEBUG
@@ -794,7 +794,7 @@ int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstrea
       window[window_ptr++]=code;
       if (window_ptr>=WINDOW_SIZE)
       {
-        fwrite(window,1,WINDOW_SIZE,out);
+        xmp_fwrite(window,1,WINDOW_SIZE,out);
         huffman->checksum=crc32(huffman->window,WINDOW_SIZE,huffman->checksum,data);
         window_ptr=0;
       }
@@ -819,7 +819,7 @@ int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstrea
       {
         while (bitstream->bitptr<length_extra_bits[code])
         {
-          bitstream->holding+=(getc(in)<<bitstream->bitptr);
+          bitstream->holding+=(xmp_fgetc(in)<<bitstream->bitptr);
           bitstream->bitptr+=8;
         }
 
@@ -837,7 +837,7 @@ int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstrea
       {
         if (bitstream->bitptr<5)
         {
-          bitstream->holding+=(getc(in)<<bitstream->bitptr);
+          bitstream->holding+=(xmp_fgetc(in)<<bitstream->bitptr);
           bitstream->bitptr+=8;
         }
  
@@ -861,7 +861,7 @@ int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstrea
           {
             /* bitstream->holding+=(getc(in)<<bitstream->bitptr); */
             /* bitstream->bitptr+=8; */
-            bitstream->holding=getc(in);
+            bitstream->holding=xmp_fgetc(in);
             bitstream->bitptr=8;
           }
 #ifdef DEBUG
@@ -899,7 +899,7 @@ int decompress(FILE *in, struct huffman_t *huffman, struct bitstream_t *bitstrea
       {
         while (bitstream->bitptr<dist_extra_bits[code])
         {
-          bitstream->holding+=(getc(in)<<bitstream->bitptr);
+          bitstream->holding+=(xmp_fgetc(in)<<bitstream->bitptr);
           bitstream->bitptr+=8;
         }
 
@@ -952,7 +952,7 @@ exit(0);
 
           if (window_ptr>=WINDOW_SIZE)
           {
-            fwrite(window,1,WINDOW_SIZE,out);
+            xmp_fwrite(window,1,WINDOW_SIZE,out);
             huffman->checksum=crc32(huffman->window,WINDOW_SIZE,huffman->checksum, data);
             window_ptr=0;
           }
@@ -972,7 +972,7 @@ exit(0);
   return 0;
 }
 
-int inflate(FILE *in, FILE *out, uint32 *checksum, int is_zip)
+int inflate(xmp_file in, xmp_file out, uint32 *checksum, int is_zip)
 {
 /* #ifndef ZIP */
   unsigned char CMF, FLG;
@@ -1001,8 +1001,8 @@ int inflate(FILE *in, FILE *out, uint32 *checksum, int is_zip)
 #endif
 
 if (!is_zip) {
-  CMF=getc(in);
-  FLG=getc(in);
+  CMF=xmp_fgetc(in);
+  FLG=xmp_fgetc(in);
 
 #ifdef DEBUG
   printf("   CMF: %d\n",CMF);
@@ -1040,7 +1040,7 @@ if (!is_zip) {
   {
     if (bitstream.bitptr<3)
     {
-      bitstream.holding=reverse[getc(in)]+(bitstream.holding<<8);
+      bitstream.holding=reverse[xmp_fgetc(in)]+(bitstream.holding<<8);
       bitstream.bitptr+=8;
     }
 
@@ -1076,11 +1076,11 @@ if (!is_zip) {
 
       for (t=0; t<block_len; t++)
       {
-        huffman.window[huffman.window_ptr++]=getc(in);
+        huffman.window[huffman.window_ptr++]=xmp_fgetc(in);
 
         if (huffman.window_ptr>=WINDOW_SIZE)
         {
-          fwrite(huffman.window,1,WINDOW_SIZE,out);
+          xmp_fwrite(huffman.window,1,WINDOW_SIZE,out);
           huffman.checksum=crc32(huffman.window,WINDOW_SIZE,huffman.checksum,&data);
           huffman.window_ptr=0;
         }
@@ -1124,7 +1124,7 @@ if (!is_zip) {
 
   if (huffman.window_ptr!=0)
   {
-    fwrite(huffman.window,1,huffman.window_ptr,out);
+    xmp_fwrite(huffman.window,1,huffman.window_ptr,out);
     huffman.checksum=crc32(huffman.window,huffman.window_ptr,huffman.checksum, &data);
   }
 
@@ -1148,7 +1148,7 @@ if (!is_zip) {
   /* for gzip */
   if (bitstream.bitptr == 8) {
     reverse_bitstream(&bitstream);
-    ungetc(bitstream.holding, in);
+    xmp_fungetc(bitstream.holding, in);
   }
 
   return 0;

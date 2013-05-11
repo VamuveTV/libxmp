@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_zen(FILE *in, FILE *out)
+static int depack_zen(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4;
 	uint8 finetune, vol;
@@ -67,7 +67,7 @@ static int depack_zen(FILE *in, FILE *out)
 	write8(out, 0x7f);		/* write ntk byte */
 
 	/* read pattern table .. */
-	fseek(in, ptable_addr, SEEK_SET);
+	xmp_fseek(in, ptable_addr, SEEK_SET);
 	for (i = 0; i < pat_pos; i++)
 		paddr[i] = read32b(in);
 
@@ -93,14 +93,14 @@ static int depack_zen(FILE *in, FILE *out)
 		}
 	}
 
-	fwrite(ptable, 128, 1, out);		/* write pattern table */
+	xmp_fwrite(ptable, 128, 1, out);		/* write pattern table */
 	write32b(out, PW_MOD_MAGIC);		/* write ptk ID */
 
 	/* pattern data */
 	/*printf ( "converting pattern datas " ); */
 	for (i = 0; i <= pat_max; i++) {
 		memset(pat, 0, 1024);
-		fseek(in, paddr_Real[i], SEEK_SET);
+		xmp_fseek(in, paddr_Real[i], SEEK_SET);
 		for (j = 0; j < 256; j++) {
 			c1 = read8(in);
 			c2 = read8(in);
@@ -120,13 +120,13 @@ static int depack_zen(FILE *in, FILE *out)
 			pat[k * 4 + 3] = fxp;
 			j = c1;
 		}
-		fwrite (pat, 1024, 1, out);
+		xmp_fwrite (pat, 1024, 1, out);
 		/*printf ( "." ); */
 	}
 	/*printf ( " ok\n" ); */
 
 	/* sample data */
-	fseek(in, sdata_addr, SEEK_SET);
+	xmp_fseek(in, sdata_addr, SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

@@ -60,8 +60,8 @@ struct far_event {
 #define MAGIC_FAR	MAGIC4('F','A','R',0xfe)
 
 
-static int far_test (FILE *, char *, const int);
-static int far_load (struct module_data *, FILE *, const int);
+static int far_test (xmp_file, char *, const int);
+static int far_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader far_loader = {
     "Farandole Composer (FAR)",
@@ -69,7 +69,7 @@ const struct format_loader far_loader = {
     far_load
 };
 
-static int far_test(FILE *f, char *t, const int start)
+static int far_test(xmp_file f, char *t, const int start)
 {
     if (read32b(f) != MAGIC_FAR)
 	return -1;
@@ -109,7 +109,7 @@ static const uint8 fx[] = {
 };
 
 
-static int far_load(struct module_data *m, FILE *f, const int start)
+static int far_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j, vib = 0;
@@ -122,20 +122,20 @@ static int far_load(struct module_data *m, FILE *f, const int start)
     LOAD_INIT();
 
     read32b(f);				/* File magic: 'FAR\xfe' */
-    fread(&ffh.name, 40, 1, f);		/* Song name */
-    fread(&ffh.crlf, 3, 1, f);		/* 0x0d 0x0a 0x1A */
+    xmp_fread(&ffh.name, 40, 1, f);		/* Song name */
+    xmp_fread(&ffh.crlf, 3, 1, f);		/* 0x0d 0x0a 0x1A */
     ffh.headersize = read16l(f);	/* Remaining header size in bytes */
     ffh.version = read8(f);		/* Version MSN=major, LSN=minor */
-    fread(&ffh.ch_on, 16, 1, f);	/* Channel on/off switches */
-    fseek(f, 9, SEEK_CUR);		/* Current editing values */
+    xmp_fread(&ffh.ch_on, 16, 1, f);	/* Channel on/off switches */
+    xmp_fseek(f, 9, SEEK_CUR);		/* Current editing values */
     ffh.tempo = read8(f);		/* Default tempo */
-    fread(&ffh.pan, 16, 1, f);		/* Channel pan definitions */
+    xmp_fread(&ffh.pan, 16, 1, f);		/* Channel pan definitions */
     read32l(f);				/* Grid, mode (for editor) */
     ffh.textlen = read16l(f);		/* Length of embedded text */
 
-    fseek(f, ffh.textlen, SEEK_CUR);	/* Skip song text */
+    xmp_fseek(f, ffh.textlen, SEEK_CUR);	/* Skip song text */
 
-    fread(&ffh2.order, 256, 1, f);	/* Orders */
+    xmp_fread(&ffh2.order, 256, 1, f);	/* Orders */
     ffh2.patterns = read8(f);		/* Number of stored patterns (?) */
     ffh2.songlen = read8(f);		/* Song length in patterns */
     ffh2.restart = read8(f);		/* Restart pos */
@@ -249,7 +249,7 @@ static int far_load(struct module_data *m, FILE *f, const int start)
     }
 
     mod->ins = -1;
-    fread(sample_map, 1, 8, f);
+    xmp_fread(sample_map, 1, 8, f);
     for (i = 0; i < 64; i++) {
 	if (sample_map[i / 8] & (1 << (i % 8)))
 		mod->ins = i;
@@ -268,7 +268,7 @@ static int far_load(struct module_data *m, FILE *f, const int start)
 
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-	fread(&fih.name, 32, 1, f);	/* Instrument name */
+	xmp_fread(&fih.name, 32, 1, f);	/* Instrument name */
 	fih.length = read32l(f);	/* Length of sample (up to 64Kb) */
 	fih.finetune = read8(f);	/* Finetune (unsuported) */
 	fih.volume = read8(f);		/* Volume (unsuported?) */

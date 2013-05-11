@@ -56,8 +56,8 @@ const struct mod_magic mod_magic[] = {
 };
 
 
-static int mod_test (FILE *, char *, const int);
-static int mod_load (struct module_data *, FILE *, const int);
+static int mod_test (xmp_file, char *, const int);
+static int mod_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader mod_loader = {
     "Protracker (MOD)",
@@ -65,15 +65,15 @@ const struct format_loader mod_loader = {
     mod_load
 };
 
-static int mod_test(FILE *f, char *t, const int start)
+static int mod_test(xmp_file f, char *t, const int start)
 {
     int i;
     char buf[4];
-    struct stat st;
+    int file_size;
     int smp_size, num_pat;
 
-    fseek(f, start + 1080, SEEK_SET);
-    if (fread(buf, 1, 4, f) < 4)
+    xmp_fseek(f, start + 1080, SEEK_SET);
+    if (xmp_fread(buf, 1, 4, f) < 4)
 	return -1;
 
     if (!strncmp(buf + 2, "CH", 2) && isdigit((int)buf[0]) && isdigit((int)buf[1])) {
@@ -101,9 +101,9 @@ static int mod_test(FILE *f, char *t, const int start)
      * formats with valid magic at offset 1080
      */
 
-    fseek(f, start + 20, SEEK_SET);
+    xmp_fseek(f, start + 20, SEEK_SET);
     for (i = 0; i < 31; i++) {
-	fseek(f, 22, SEEK_CUR);			/* Instrument name */
+	xmp_fseek(f, 22, SEEK_CUR);			/* Instrument name */
 	if (read16b(f) & 0x8000)		/* test length */
 		return -1;
 	if (read8(f) & 0xf0)			/* test finetune */
@@ -126,20 +126,20 @@ static int mod_test(FILE *f, char *t, const int start)
      */
 
     /* get file size */
-    fstat(fileno(f), &st);
+    file_size = xmp_fsize(f);
     smp_size = 0;
-    fseek(f, start + 20, SEEK_SET);
+    xmp_fseek(f, start + 20, SEEK_SET);
 
     /* get samples size */
     for (i = 0; i < 31; i++) {
-	fseek(f, 22, SEEK_CUR);
+	xmp_fseek(f, 22, SEEK_CUR);
 	smp_size += 2 * read16b(f);		/* Length in 16-bit words */
-	fseek(f, 6, SEEK_CUR);
+	xmp_fseek(f, 6, SEEK_CUR);
     } 
 
     /* get number of patterns */
     num_pat = 0;
-    fseek(f, start + 952, SEEK_SET);
+    xmp_fseek(f, start + 952, SEEK_SET);
     for (i = 0; i < 128; i++) {
 	uint8 x = read8(f);
 	if (x > 0x7f)
@@ -149,11 +149,11 @@ static int mod_test(FILE *f, char *t, const int start)
     }
     num_pat++;
 
-    if (start + 1084 + num_pat * 0x300 + smp_size == st.st_size)
+    if (start + 1084 + num_pat * 0x300 + smp_size == file_size)
 	return -1;
 
   found:
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 20);
 
     return 0;
@@ -175,7 +175,7 @@ static int is_st_ins (char *s)
 }
 
 
-static int mod_load(struct module_data *m, FILE *f, const int start)
+static int mod_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -198,9 +198,9 @@ static int mod_load(struct module_data *m, FILE *f, const int start)
 
     m->quirk |= QUIRK_MODRNG;
 
-    fread(&mh.name, 20, 1, f);
+    xmp_fread(&mh.name, 20, 1, f);
     for (i = 0; i < 31; i++) {
-	fread(&mh.ins[i].name, 22, 1, f);	/* Instrument name */
+	xmp_fread(&mh.ins[i].name, 22, 1, f);	/* Instrument name */
 	mh.ins[i].size = read16b(f);		/* Length in 16-bit words */
 	mh.ins[i].finetune = read8(f);		/* Finetune (signed nibble) */
 	mh.ins[i].volume = read8(f);		/* Linear playback volume */
@@ -211,9 +211,9 @@ static int mod_load(struct module_data *m, FILE *f, const int start)
     }
     mh.len = read8(f);
     mh.restart = read8(f);
-    fread(&mh.order, 128, 1, f);
+    xmp_fread(&mh.order, 128, 1, f);
     memset(magic, 0, 8);
-    fread(magic, 4, 1, f);
+    xmp_fread(magic, 4, 1, f);
 
     for (i = 0; mod_magic[i].ch; i++) {
 	if (!(strncmp (magic, mod_magic[i].magic, 4))) {
@@ -296,10 +296,10 @@ static int mod_load(struct module_data *m, FILE *f, const int start)
      */
 
     if (0x43c + mod->pat * 4 * mod->chn * 0x40 + smp_size < m->size) {
-	int pos = ftell(f);
-	fseek(f, start + 0x43c + mod->pat * 4 * mod->chn * 0x40 + smp_size, SEEK_SET);
-	fread(idbuffer, 1, 4, f);
-	fseek(f, start + pos, SEEK_SET);
+	int pos = xmp_ftell(f);
+	xmp_fseek(f, start + 0x43c + mod->pat * 4 * mod->chn * 0x40 + smp_size, SEEK_SET);
+	xmp_fread(idbuffer, 1, 4, f);
+	xmp_fseek(f, start + pos, SEEK_SET);
 
 	if (!memcmp(idbuffer, "FLEX", 4)) {
 	    tracker = "Flextrax";
@@ -481,7 +481,7 @@ skip_test:
 	TRACK_ALLOC (i);
 	for (j = 0; j < (64 * mod->chn); j++) {
 	    event = &EVENT (i, j % mod->chn, j / mod->chn);
-	    fread (mod_event, 1, 4, f);
+	    xmp_fread (mod_event, 1, 4, f);
 
 	    cvt_pt_event(event, mod_event);
 	}
@@ -503,11 +503,11 @@ skip_test:
 	flags = ptkloop ? SAMPLE_FLAG_FULLREP : 0;
 
 	if (ptsong) {
-	    FILE *s;
+	    xmp_file s;
 	    char sn[256];
 	    snprintf(sn, XMP_NAME_SIZE, "%s%s", pathname, mod->xxi[i].name);
 	
-	    if ((s = fopen (sn, "rb"))) {
+	    if ((s = xmp_fopen (sn, "rb"))) {
 	        load_sample(m, s, flags, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	    }
 	} else {

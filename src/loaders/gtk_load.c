@@ -10,8 +10,8 @@
 #include "period.h"
 
 
-static int gtk_test(FILE *, char *, const int);
-static int gtk_load (struct module_data *, FILE *, const int);
+static int gtk_test(xmp_file, char *, const int);
+static int gtk_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader gtk_loader = {
 	"Graoumf Tracker (GTK)",
@@ -19,11 +19,11 @@ const struct format_loader gtk_loader = {
 	gtk_load
 };
 
-static int gtk_test(FILE * f, char *t, const int start)
+static int gtk_test(xmp_file f, char *t, const int start)
 {
 	char buf[4];
 
-	if (fread(buf, 1, 4, f) < 4)
+	if (xmp_fread(buf, 1, 4, f) < 4)
 		return -1;
 
 	if (memcmp(buf, "GTK", 3) || buf[3] > 4)
@@ -82,7 +82,7 @@ static void translate_effects(struct xmp_event *event)
 	}
 }
 
-static int gtk_load(struct module_data *m, FILE *f, const int start)
+static int gtk_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -93,11 +93,11 @@ static int gtk_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fread(buffer, 4, 1, f);
+	xmp_fread(buffer, 4, 1, f);
 	ver = buffer[3];
-	fread(mod->name, 32, 1, f);
+	xmp_fread(mod->name, 32, 1, f);
 	set_type(m, "Graoumf Tracker GTK v%d", ver);
-	fseek(f, 160, SEEK_CUR);	/* skip comments */
+	xmp_fseek(f, 160, SEEK_CUR);	/* skip comments */
 
 	mod->ins = read16b(f);
 	mod->smp = mod->ins;
@@ -114,7 +114,7 @@ static int gtk_load(struct module_data *m, FILE *f, const int start)
 	INSTRUMENT_INIT();
 	for (i = 0; i < mod->ins; i++) {
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-		fread(buffer, 28, 1, f);
+		xmp_fread(buffer, 28, 1, f);
 		copy_adjust(mod->xxi[i].name, buffer, 28);
 
 		if (ver == 1) {
@@ -130,7 +130,7 @@ static int gtk_load(struct module_data *m, FILE *f, const int start)
 			bits = 1;
 			c2spd = 8363;
 		} else {
-			fseek(f, 14, SEEK_CUR);
+			xmp_fseek(f, 14, SEEK_CUR);
 			read16b(f);		/* autobal */
 			bits = read16b(f);	/* 1 = 8 bits, 2 = 16 bits */
 			c2spd = read16b(f);

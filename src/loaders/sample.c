@@ -198,7 +198,7 @@ static void unroll_loop(struct xmp_sample *xxs)
 }
 
 
-int load_sample(struct module_data *m, FILE *f, int flags, struct xmp_sample *xxs, void *buffer)
+int load_sample(struct module_data *m, xmp_file f, int flags, struct xmp_sample *xxs, void *buffer)
 {
 	int bytelen, extralen, unroll_extralen, i;
 
@@ -238,7 +238,7 @@ int load_sample(struct module_data *m, FILE *f, int flags, struct xmp_sample *xx
 	 */
 	if (m->smpctl & XMP_SMPCTL_SKIP) {
 		if (~flags & SAMPLE_FLAG_NOLOAD)
-			fseek(f, xxs->len, SEEK_CUR);
+			xmp_fseek(f, xxs->len, SEEK_CUR);
 		return 0;
 	}
 
@@ -292,22 +292,22 @@ int load_sample(struct module_data *m, FILE *f, int flags, struct xmp_sample *xx
 		memcpy(xxs->data, buffer, bytelen);
 	} else {
 		uint8 buf[5];
-		int pos = ftell(f);
-		int num = fread(buf, 1, 5, f);
+		int pos = xmp_ftell(f);
+		int num = xmp_fread(buf, 1, 5, f);
 
-		fseek(f, pos, SEEK_SET);
+		xmp_fseek(f, pos, SEEK_SET);
 
 		if (num == 5 && !memcmp(buf, "ADPCM", 5)) {
 			int x2 = bytelen >> 1;
 			char table[16];
 
-			fseek(f, 5, SEEK_CUR);	/* Skip "ADPCM" */
-			fread(table, 1, 16, f);
-			fread(xxs->data + x2, 1, x2, f);
+			xmp_fseek(f, 5, SEEK_CUR);	/* Skip "ADPCM" */
+			xmp_fread(table, 1, 16, f);
+			xmp_fread(xxs->data + x2, 1, x2, f);
 			adpcm4_decoder((uint8 *)xxs->data + x2,
 				       (uint8 *)xxs->data, table, bytelen);
 		} else {
-			int x = fread(xxs->data, 1, bytelen, f);
+			int x = xmp_fread(xxs->data, 1, bytelen, f);
 			if (x != bytelen) {
 				fprintf(stderr, "libxmp: short read (%d) in "
 					"sample load\n", x - bytelen);

@@ -39,21 +39,21 @@ void Depack_PP10 (FILE * in, FILE * out)
 		for (j = 0; j < 22; j++)	/*sample name */
 			fwrite (&c1, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* size */
+		xmp_fread (&c2, 1, 1, in);
 		ssize += (((c1 << 8) + c2) * 2);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* finetune */
+		xmp_fread (&c1, 1, 1, in);	/* finetune */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* volume */
+		xmp_fread (&c1, 1, 1, in);	/* volume */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop start */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop start */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop size */
+		xmp_fread (&c2, 1, 1, in);
 		if ((c1 == 0x00) && (c2 == 0x00))
 			c2 = 0x01;
 		fwrite (&c1, 1, 1, out);
@@ -62,19 +62,19 @@ void Depack_PP10 (FILE * in, FILE * out)
 	/*printf ( "Whole sample size : %ld\n" , ssize ); */
 
 	/* read and write pattern table lenght */
-	fread (&pat_pos, 1, 1, in);
+	xmp_fread (&pat_pos, 1, 1, in);
 	fwrite (&pat_pos, 1, 1, out);
 	/*printf ( "Size of pattern list : %d\n" , pat_pos ); */
 
 	/* read and write NoiseTracker byte */
-	fread (&c1, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
 	fwrite (&c1, 1, 1, out);
 
 	/* read track list and get highest track number */
 	Max = 0;
 	for (j = 0; j < 4; j++) {
 		for (i = 0; i < 128; i++) {
-			fread (&Tracks_Numbers[j][i], 1, 1, in);
+			xmp_fread (&Tracks_Numbers[j][i], 1, 1, in);
 			if (Tracks_Numbers[j][i] > Max)
 				Max = Tracks_Numbers[j][i];
 		}
@@ -106,10 +106,10 @@ void Depack_PP10 (FILE * in, FILE * out)
 			fseek (in, 762 + (Tracks_Numbers[j][i] << 8), 0);	/* SEEK_SET */
 /*fprintf ( info , "Voice %ld :\n" , j );*/
 			for (k = 0; k < 64; k++) {
-				fread (&c1, 1, 1, in);
-				fread (&c2, 1, 1, in);
-				fread (&c3, 1, 1, in);
-				fread (&c4, 1, 1, in);
+				xmp_fread (&c1, 1, 1, in);
+				xmp_fread (&c2, 1, 1, in);
+				xmp_fread (&c3, 1, 1, in);
+				xmp_fread (&c4, 1, 1, in);
 /*fprintf ( info , "%2x , %2x , %2x  (%ld)\n" , c2 , c3 , c4 ,ftell (in));*/
 				Pattern[k * 16 + j * 4] = c1;
 				Pattern[k * 16 + j * 4 + 1] = c2;
@@ -128,7 +128,7 @@ void Depack_PP10 (FILE * in, FILE * out)
 
 	/* sample data */
 	tmp = (uint8 *) malloc (ssize);
-	fread (tmp, ssize, 1, in);
+	xmp_fread (tmp, ssize, 1, in);
 	fwrite (tmp, ssize, 1, out);
 	free (tmp);
 

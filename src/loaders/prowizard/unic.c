@@ -17,7 +17,7 @@
 #define ON 1
 #define OFF 2
 
-static int depack_unic (FILE *in, FILE *out)
+static int depack_unic (xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4;
 	uint8 npat;
@@ -73,8 +73,8 @@ static int depack_unic (FILE *in, FILE *out)
 	write8(out, 0x7f);			/* noisetracker byte */
 	read8(in);
 
-	fread(tmp, 128, 1, in);			/* pat table */
-	fwrite(tmp, 128, 1, out);
+	xmp_fread(tmp, 128, 1, in);			/* pat table */
+	xmp_fwrite(tmp, 128, 1, out);
 
 	/* get highest pattern number */
 	for (i = 0; i < 128; i++) {
@@ -86,11 +86,11 @@ static int depack_unic (FILE *in, FILE *out)
 	write32b(out, PW_MOD_MAGIC);
 
 	/* verify UNIC ID */
-	fseek(in, 1080, SEEK_SET);
+	xmp_fseek(in, 1080, SEEK_SET);
 	id = read32b(in);
 
 	if (id && id != MAGIC_M_K_ && id != MAGIC_UNIC)
-		fseek(in, -4, SEEK_CUR);
+		xmp_fseek(in, -4, SEEK_CUR);
 
 	/* pattern data */
 	for (i = 0; i < max; i++) {
@@ -115,7 +115,7 @@ static int depack_unic (FILE *in, FILE *out)
 			tmp[j * 4 + 2] = ((ins << 4) & 0xf0) | fxt;
 			tmp[j * 4 + 3] = fxp;
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* sample data */

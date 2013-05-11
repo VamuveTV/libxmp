@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "xmp.h"
 
 int exclude_match(char *);
 
@@ -84,7 +85,7 @@ struct local_data {
 
  unsigned int sum;
 
- FILE *outfile;
+ xmp_file outfile;
 };
 
 /* ---------------------------------------------------------------------- */
@@ -644,7 +645,7 @@ static void decrunch(struct local_data *data)
 
 /* Opens a file for writing & creates the full path if required. */
 
-static FILE *open_output(char *filename, struct local_data *data)
+static xmp_file open_output(char *filename, struct local_data *data)
 {
 #if 0
  unsigned int temp;
@@ -676,10 +677,10 @@ static FILE *open_output(char *filename, struct local_data *data)
 
 /* Trying to understand this function is hazardous. */
 
-static int extract_normal(FILE *in_file, struct local_data *data)
+static int extract_normal(xmp_file in_file, struct local_data *data)
 {
  struct filename_node *node;
- FILE *out_file = 0;
+ xmp_file out_file = 0;
  unsigned char *pos;
  unsigned char *temp;
  unsigned int count;
@@ -735,13 +736,10 @@ static int extract_normal(FILE *in_file, struct local_data *data)
 
      if(data->pack_size < count) count = data->pack_size; /* make sure we don't read too much */
 
-     if(fread(temp, 1, count, in_file) != count)
+     if(xmp_fread(temp, 1, count, in_file) != count)
      {
       printf("\n");
-      if(ferror(in_file))
-       perror("FRead(Data)");
-      else
-       fprintf(stderr, "EOF: Data\n");
+      fprintf(stderr, "EOF: Data\n");
       abort = 1;
       break; /* fatal error */
      }
@@ -789,7 +787,7 @@ static int extract_normal(FILE *in_file, struct local_data *data)
    if(out_file) /* Write the data to the file */
    {
     abort = 1;
-    if(fwrite(pos, 1, count, out_file) != count)
+    if(xmp_fwrite(pos, 1, count, out_file) != count)
     {
 #if 0
      perror("FWrite"); /* argh! write error */
@@ -818,10 +816,10 @@ static int extract_normal(FILE *in_file, struct local_data *data)
 
 /* This is less complex than extract_normal. Almost decipherable. */
 
-static int extract_store(FILE *in_file, struct local_data *data)
+static int extract_store(xmp_file in_file, struct local_data *data)
 {
  struct filename_node *node;
- FILE *out_file;
+ xmp_file out_file;
  unsigned int count;
  int abort = 0;
 
@@ -845,13 +843,10 @@ static int extract_store(FILE *in_file, struct local_data *data)
   {
    count = (data->unpack_size > 16384) ? 16384 : data->unpack_size;
 
-   if(fread(data->read_buffer, 1, count, in_file) != count)
+   if(xmp_fread(data->read_buffer, 1, count, in_file) != count)
    {
     printf("\n");
-    if(ferror(in_file))
-     perror("FRead(Data)");
-    else
-     fprintf(stderr, "EOF: Data\n");
+    fprintf(stderr, "EOF: Data\n");
     abort = 1;
     break; /* fatal error */
    }
@@ -862,7 +857,7 @@ static int extract_store(FILE *in_file, struct local_data *data)
    if(out_file) /* Write the data to the file */
    {
     abort = 1;
-    if(fwrite(data->read_buffer, 1, count, out_file) != count)
+    if(xmp_fwrite(data->read_buffer, 1, count, out_file) != count)
     {
 #if 0
      perror("FWrite"); /* argh! write error */
@@ -890,7 +885,7 @@ static int extract_store(FILE *in_file, struct local_data *data)
 
 /* Easiest of the three. Just print the file(s) we didn't understand. */
 
-static int extract_unknown(FILE *in_file, struct local_data *data)
+static int extract_unknown(xmp_file in_file, struct local_data *data)
 {
  struct filename_node *node;
  int abort = 0;
@@ -908,7 +903,7 @@ static int extract_unknown(FILE *in_file, struct local_data *data)
 /* Read the archive and build a linked list of names. Merged files is     */
 /* always assumed. Will fail if there is no memory for a node. Sigh.      */
 
-static int extract_archive(FILE *in_file, struct local_data *data)
+static int extract_archive(xmp_file in_file, struct local_data *data)
 {
  unsigned int temp;
  struct filename_node **filename_next;
@@ -924,8 +919,8 @@ static int extract_archive(FILE *in_file, struct local_data *data)
  do
  {
   abort = 1; /* assume an error */
-  actual = fread(data->archive_header, 1, 31, in_file);
-  if(!ferror(in_file))
+  actual = xmp_fread(data->archive_header, 1, 31, in_file);
+  if(1)//!ferror(in_file))
   {
    if(actual) /* 0 is normal and means EOF */
    {
@@ -939,16 +934,16 @@ static int extract_archive(FILE *in_file, struct local_data *data)
      data->archive_header[26] = 0;
      crc_calc(data->archive_header, 31, data);
      temp = data->archive_header[30]; /* filename length */
-     actual = fread(data->header_filename, 1, temp, in_file);
-     if(!ferror(in_file))
+     actual = xmp_fread(data->header_filename, 1, temp, in_file);
+     if(1)//!ferror(in_file))
      {
       if(actual == temp)
       {
        data->header_filename[temp] = 0;
        crc_calc(data->header_filename, temp, data);
        temp = data->archive_header[14]; /* comment length */
-       actual = fread(data->header_comment, 1, temp, in_file);
-       if(!ferror(in_file))
+       actual = xmp_fread(data->header_comment, 1, temp, in_file);
+       if(1)//!ferror(in_file))
        {
         if(actual == temp)
         {
@@ -1003,7 +998,7 @@ static int extract_archive(FILE *in_file, struct local_data *data)
             data->filename_list = 0; /* clear the list */
             filename_next = &data->filename_list;
 
-            if(fseek(in_file, data->pack_size, SEEK_CUR))
+            if(xmp_fseek(in_file, data->pack_size, SEEK_CUR))
             {
              perror("FSeek(Data)");
              break;
@@ -1391,7 +1386,7 @@ int main(int argc, char **argv)
 
 #include "common.h"
 
-int decrunch_lzx(FILE *f, FILE *fo)                          
+int decrunch_lzx(xmp_file f, xmp_file fo)
 {                                                          
 	struct local_data *data;
 
@@ -1402,7 +1397,7 @@ int decrunch_lzx(FILE *f, FILE *fo)
 	if (data == NULL)
 		return -1;
 
-	fseek(f, 10, SEEK_CUR);		/* skip header */
+	xmp_fseek(f, 10, SEEK_CUR);		/* skip header */
 
 	data->outfile = fo;
 	extract_archive(f, data);

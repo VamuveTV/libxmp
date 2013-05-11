@@ -20,8 +20,8 @@
 #define MAGIC_DMDL	MAGIC4('D','M','D','L')
 
 
-static int mdl_test (FILE *, char *, const int);
-static int mdl_load (struct module_data *, FILE *, const int);
+static int mdl_test (xmp_file, char *, const int);
+static int mdl_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader mdl_loader = {
     "Digitrakker (MDL)",
@@ -29,7 +29,7 @@ const struct format_loader mdl_loader = {
     mdl_load
 };
 
-static int mdl_test(FILE *f, char *t, const int start)
+static int mdl_test(xmp_file f, char *t, const int start)
 {
     uint16 id;
 
@@ -292,13 +292,13 @@ static void unpack_sample16(uint8 *t, uint8 *f, int len, int l)
  * IFF chunk handlers
  */
 
-static void get_chunk_in(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_in(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i;
 
-    fread(mod->name, 1, 32, f);
-    fseek(f, 20, SEEK_CUR);
+    xmp_fread(mod->name, 1, 32, f);
+    xmp_fseek(f, 20, SEEK_CUR);
 
     mod->len = read16l(f);
     mod->rst = read16l(f);
@@ -313,14 +313,14 @@ static void get_chunk_in(struct module_data *m, int size, FILE *f, void *parm)
 	mod->xxc[i].pan = chinfo << 1;
     }
     mod->chn = i;
-    fseek(f, 32 - i - 1, SEEK_CUR);
+    xmp_fseek(f, 32 - i - 1, SEEK_CUR);
 
-    fread(mod->xxo, 1, mod->len, f);
+    xmp_fread(mod->xxo, 1, mod->len, f);
 
     MODULE_INFO();
 }
 
-static void get_chunk_pa(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_pa(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i, j, chn;
@@ -337,7 +337,7 @@ static void get_chunk_pa(struct module_data *m, int size, FILE *f, void *parm)
 	chn = read8(f);
 	mod->xxp[i]->rows = (int)read8(f) + 1;
 
-	fseek(f, 16, SEEK_CUR);		/* Skip pattern name */
+	xmp_fseek(f, 16, SEEK_CUR);		/* Skip pattern name */
 	for (j = 0; j < chn; j++) {
 	    x = read16l(f);
 	    if (j < mod->chn)
@@ -346,7 +346,7 @@ static void get_chunk_pa(struct module_data *m, int size, FILE *f, void *parm)
     }
 }
 
-static void get_chunk_p0(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_p0(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -370,7 +370,7 @@ static void get_chunk_p0(struct module_data *m, int size, FILE *f, void *parm)
     }
 }
 
-static void get_chunk_tr(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_tr(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     int i, j, k, row, len;
@@ -457,7 +457,7 @@ static void get_chunk_tr(struct module_data *m, int size, FILE *f, void *parm)
     free(track);
 }
 
-static void get_chunk_ii(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_ii(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -473,7 +473,7 @@ static void get_chunk_ii(struct module_data *m, int size, FILE *f, void *parm)
     for (i = 0; i < mod->ins; i++) {
 	data->i_index[i] = read8(f);
 	mod->xxi[i].nsm = read8(f);
-	fread(buf, 1, 32, f);
+	xmp_fread(buf, 1, 32, f);
 	buf[32] = 0;
 	str_adj(buf);
 	strncpy((char *)mod->xxi[i].name, buf, 32);
@@ -533,7 +533,7 @@ static void get_chunk_ii(struct module_data *m, int size, FILE *f, void *parm)
     }
 }
 
-static void get_chunk_is(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_is(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -549,11 +549,11 @@ static void get_chunk_is(struct module_data *m, int size, FILE *f, void *parm)
 
     for (i = 0; i < mod->smp; i++) {
 	data->s_index[i] = read8(f);		/* Sample number */
-	fread(buf, 1, 32, f);
+	xmp_fread(buf, 1, 32, f);
 	buf[32] = 0;
 	str_adj(buf);
 
-	fseek(f, 8, SEEK_CUR);		/* Sample filename */
+	xmp_fseek(f, 8, SEEK_CUR);		/* Sample filename */
 
 	data->c2spd[i] = read32l(f);
 
@@ -588,7 +588,7 @@ static void get_chunk_is(struct module_data *m, int size, FILE *f, void *parm)
     }
 }
 
-static void get_chunk_i0(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_i0(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -609,10 +609,10 @@ static void get_chunk_i0(struct module_data *m, int size, FILE *f, void *parm)
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 	mod->xxi[i].sub[0].sid = data->i_index[i] = data->s_index[i] = read8(f);
 
-	fread(buf, 1, 32, f);
+	xmp_fread(buf, 1, 32, f);
 	buf[32] = 0;
 	str_adj(buf);			/* Sample name */
-	fseek(f, 8, SEEK_CUR);		/* Sample filename */
+	xmp_fseek(f, 8, SEEK_CUR);		/* Sample filename */
 
 	data->c2spd[i] = read16l(f);
 
@@ -643,7 +643,7 @@ static void get_chunk_i0(struct module_data *m, int size, FILE *f, void *parm)
     }
 }
 
-static void get_chunk_sa(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_sa(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct xmp_module *mod = &m->mod;
     struct local_data *data = (struct local_data *)parm;
@@ -658,19 +658,19 @@ static void get_chunk_sa(struct module_data *m, int size, FILE *f, void *parm)
 
 	switch (data->packinfo[i]) {
 	case 0:
-	    fread(smpbuf, 1, mod->xxs[i].len, f);
+	    xmp_fread(smpbuf, 1, mod->xxs[i].len, f);
 	    break;
 	case 1: 
 	    len = read32l(f);
 	    buf = malloc(len + 4);
-	    fread(buf, 1, len, f);
+	    xmp_fread(buf, 1, len, f);
 	    unpack_sample8(smpbuf, buf, len, mod->xxs[i].len);
 	    free(buf);
 	    break;
 	case 2:
 	    len = read32l(f);
 	    buf = malloc(len + 4);
-	    fread(buf, 1, len, f);
+	    xmp_fread(buf, 1, len, f);
 	    unpack_sample16(smpbuf, buf, len, mod->xxs[i].len);
 	    free(buf);
 	    break;
@@ -684,7 +684,7 @@ static void get_chunk_sa(struct module_data *m, int size, FILE *f, void *parm)
     free(data->packinfo);
 }
 
-static void get_chunk_ve(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_ve(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct local_data *data = (struct local_data *)parm;
     int i;
@@ -698,13 +698,13 @@ static void get_chunk_ve(struct module_data *m, int size, FILE *f, void *parm)
 
     for (i = 0; i < data->v_envnum; i++) {
 	data->v_env[i].num = read8(f);
-	fread(data->v_env[i].data, 1, 30, f);
+	xmp_fread(data->v_env[i].data, 1, 30, f);
 	data->v_env[i].sus = read8(f);
 	data->v_env[i].loop = read8(f);
     }
 }
 
-static void get_chunk_pe(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_pe(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct local_data *data = (struct local_data *)parm;
     int i;
@@ -718,13 +718,13 @@ static void get_chunk_pe(struct module_data *m, int size, FILE *f, void *parm)
 
     for (i = 0; i < data->p_envnum; i++) {
 	data->p_env[i].num = read8(f);
-	fread(data->p_env[i].data, 1, 30, f);
+	xmp_fread(data->p_env[i].data, 1, 30, f);
 	data->p_env[i].sus = read8(f);
 	data->p_env[i].loop = read8(f);
     }
 }
 
-static void get_chunk_fe(struct module_data *m, int size, FILE *f, void *parm)
+static void get_chunk_fe(struct module_data *m, int size, xmp_file f, void *parm)
 {
     struct local_data *data = (struct local_data *)parm;
     int i;
@@ -738,14 +738,14 @@ static void get_chunk_fe(struct module_data *m, int size, FILE *f, void *parm)
 
     for (i = 0; i < data->f_envnum; i++) {
 	data->f_env[i].num = read8(f);
-	fread(data->f_env[i].data, 1, 30, f);
+	xmp_fread(data->f_env[i].data, 1, 30, f);
 	data->f_env[i].sus = read8(f);
 	data->f_env[i].loop = read8(f);
     }
 }
 
 
-static int mdl_load(struct module_data *m, FILE *f, const int start)
+static int mdl_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     iff_handle handle;
@@ -757,7 +757,7 @@ static int mdl_load(struct module_data *m, FILE *f, const int start)
 
     /* Check magic and get version */
     read32b(f);
-    fread(buf, 1, 1, f);
+    xmp_fread(buf, 1, 1, f);
 
     handle = iff_new();
     if (handle == NULL)
@@ -805,7 +805,7 @@ static int mdl_load(struct module_data *m, FILE *f, const int start)
     }
 
     /* Load IFFoid chunks */
-    while (!feof(f)) {
+    while (!xmp_feof(f)) {
 	iff_chunk(handle, m, f, &data);
     }
 

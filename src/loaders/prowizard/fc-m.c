@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_fcm(FILE *in, FILE *out)
+static int depack_fcm(xmp_file in, xmp_file out)
 {
 	uint8 c1;
 	uint8 ptable[128];

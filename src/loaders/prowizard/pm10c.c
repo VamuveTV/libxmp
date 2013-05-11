@@ -14,7 +14,7 @@
 #define ON  0
 #define OFF 1
 
-static int depack_p10c(FILE *in, FILE *out)
+static int depack_p10c(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3;
 	short pat_max = 0;
@@ -53,7 +53,7 @@ static int depack_p10c(FILE *in, FILE *out)
 	pw_write_zero(out, 20);				/* title */
 
 	/* bypass replaycode routine */
-	fseek(in, 4460, SEEK_SET);
+	xmp_fseek(in, 4460, SEEK_SET);
 
 	for (i = 0; i < 31; i++) {
 		pw_write_zero(out, 22);			/*sample name */
@@ -135,18 +135,18 @@ restart:
 
 	/* write pattern table */
 	for (c1 = 0x00; c1 < 128; c1++)
-		fwrite(&pnum[c1], 1, 1, out);
+		xmp_fwrite(&pnum[c1], 1, 1, out);
 
 	write32b(out, PW_MOD_MAGIC);
 
 	/* a little pre-calc code ... no other way to deal with these unknown
 	 * pattern data sizes ! :(
 	 */
-	fseek(in, 4456, SEEK_SET);
+	xmp_fseek(in, 4456, SEEK_SET);
 	psize = read32b(in);
 
 	/* go back to pattern data starting address */
-	fseek(in, 5222, SEEK_SET);
+	xmp_fseek(in, 5222, SEEK_SET);
 	/* now, reading all pattern data to get the max value of note */
 	for (j = 0; j < psize; j += 2) {
 		int x;
@@ -158,10 +158,10 @@ restart:
 	refmax += 1;		/* coz 1st value is 0 ! */
 	i = refmax * 4;		/* coz each block is 4 bytes long */
 	reftab = (uint8 *) malloc(i);
-	fread(reftab, i, 1, in);
+	xmp_fread(reftab, i, 1, in);
 
 	/* go back to pattern data starting address */
-	fseek(in, 5222, SEEK_SET);
+	xmp_fseek(in, 5222, SEEK_SET);
 
 	for (k = j = 0; j <= pat_max; j++) {
 		for (i = 0; i < 64; i++) {
@@ -314,14 +314,14 @@ restart:
 				break;
 			}
 		}
-		fwrite(pat[j], 1024, 1, out);
+		xmp_fwrite(pat[j], 1024, 1, out);
 	}
 
 	free(reftab);
 
-	fseek(in, 4452, SEEK_SET);
+	xmp_fseek(in, 4452, SEEK_SET);
 	SDAV = read32b(in);
-	fseek(in, 4456 + SDAV, SEEK_SET);
+	xmp_fseek(in, 4456 + SDAV, SEEK_SET);
 
 	pw_move_data(out, in, ssize);
 

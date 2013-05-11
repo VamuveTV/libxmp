@@ -16,7 +16,7 @@ static int fine_table[] = {
 };
 
 
-static int depack_nru(FILE *in, FILE *out)
+static int depack_nru(xmp_file in, xmp_file out)
 {
 	uint8 tmp[1025];
 	uint8 ptable[128];
@@ -58,14 +58,14 @@ static int depack_nru(FILE *in, FILE *out)
 		write16b(out, lsize);		/* write loop size */
 	}
 
-	fseek(in, 950, SEEK_SET);
+	xmp_fseek(in, 950, SEEK_SET);
 	write8(out, read8(in));			/* size of pattern list */
 	write8(out, read8(in));			/* ntk byte */
 
 	/* pattern table */
 	max_pat = 0;
-	fread(ptable, 128, 1, in);
-	fwrite(ptable, 128, 1, out);
+	xmp_fread(ptable, 128, 1, in);
+	xmp_fwrite(ptable, 128, 1, out);
 	for (i = 0; i < 128; i++) {
 		if (ptable[i] > max_pat)
 			max_pat = ptable[i];
@@ -75,10 +75,10 @@ static int depack_nru(FILE *in, FILE *out)
 	write32b(out, PW_MOD_MAGIC);
 
 	/* pattern data */
-	fseek (in, 0x043c, SEEK_SET);
+	xmp_fseek (in, 0x043c, SEEK_SET);
 	for (i = 0; i < max_pat; i++) {
 		memset(pat_data, 0, 1025);
-		fread(tmp, 1024, 1, in);
+		xmp_fread(tmp, 1024, 1, in);
 		for (j = 0; j < 256; j++) {
 			ins = (tmp[j * 4 + 3] >> 3) & 0x1f;
 			note = tmp[j * 4 + 2];
@@ -102,7 +102,7 @@ static int depack_nru(FILE *in, FILE *out)
 			pat_data[j * 4 + 2] |= fxt;
 			pat_data[j * 4 + 3] = fxp;
 		}
-		fwrite (pat_data, 1024, 1, out);
+		xmp_fwrite (pat_data, 1024, 1, out);
 	}
 
 	pw_move_data(out, in, ssize);		/* sample data */

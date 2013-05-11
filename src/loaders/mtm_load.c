@@ -35,8 +35,8 @@ struct mtm_instrument_header {
 };
 
 
-static int mtm_test (FILE *, char *, const int);
-static int mtm_load (struct module_data *, FILE *, const int);
+static int mtm_test (xmp_file, char *, const int);
+static int mtm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader mtm_loader = {
     "Multitracker (MTM)",
@@ -44,11 +44,11 @@ const struct format_loader mtm_loader = {
     mtm_load
 };
 
-static int mtm_test(FILE *f, char *t, const int start)
+static int mtm_test(xmp_file f, char *t, const int start)
 {
     uint8 buf[4];
 
-    if (fread(buf, 1, 4, f) < 4)
+    if (xmp_fread(buf, 1, 4, f) < 4)
 	return -1;
     if (memcmp(buf, "MTM", 3))
 	return -1;
@@ -61,7 +61,7 @@ static int mtm_test(FILE *f, char *t, const int start)
 }
 
 
-static int mtm_load(struct module_data *m, FILE *f, const int start)
+static int mtm_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -72,9 +72,9 @@ static int mtm_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&mfh.magic, 3, 1, f);		/* "MTM" */
+    xmp_fread(&mfh.magic, 3, 1, f);		/* "MTM" */
     mfh.version = read8(f);		/* MSN=major, LSN=minor */
-    fread(&mfh.name, 20, 1, f);		/* ASCIIZ Module name */
+    xmp_fread(&mfh.name, 20, 1, f);		/* ASCIIZ Module name */
     mfh.tracks = read16l(f);		/* Number of tracks saved */
     mfh.patterns = read8(f);		/* Number of patterns saved */
     mfh.modlen = read8(f);		/* Module length */
@@ -83,7 +83,7 @@ static int mtm_load(struct module_data *m, FILE *f, const int start)
     mfh.attr = read8(f);		/* Always zero */
     mfh.rows = read8(f);		/* Number rows per track */
     mfh.channels = read8(f);		/* Number of tracks per pattern */
-    fread(&mfh.pan, 32, 1, f);		/* Pan positions for each channel */
+    xmp_fread(&mfh.pan, 32, 1, f);		/* Pan positions for each channel */
 
 #if 0
     if (strncmp ((char *)mfh.magic, "MTM", 3))
@@ -110,7 +110,7 @@ static int mtm_load(struct module_data *m, FILE *f, const int start)
     for (i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-	fread(&mih.name, 22, 1, f);		/* Instrument name */
+	xmp_fread(&mih.name, 22, 1, f);		/* Instrument name */
 	mih.length = read32l(f);		/* Instrument length in bytes */
 	mih.loop_start = read32l(f);		/* Sample loop start */
 	mih.loopend = read32l(f);		/* Sample loop end */
@@ -145,7 +145,7 @@ static int mtm_load(struct module_data *m, FILE *f, const int start)
 		mod->xxi[i].sub[0].vol, mod->xxi[i].sub[0].fin - 0x80);
     }
 
-    fread(mod->xxo, 1, 128, f);
+    xmp_fread(mod->xxo, 1, 128, f);
 
     PATTERN_INIT();
 
@@ -157,7 +157,7 @@ static int mtm_load(struct module_data *m, FILE *f, const int start)
 	mod->xxt[i]->rows = mfh.rows;
 	if (!i)
 	    continue;
-	fread (&mt, 3, 64, f);
+	xmp_fread (&mt, 3, 64, f);
 	for (j = 0; j < 64; j++) {
 	    if ((mod->xxt[i]->event[j].note = mt[j * 3] >> 2))
 		mod->xxt[i]->event[j].note += 37;
@@ -188,7 +188,7 @@ static int mtm_load(struct module_data *m, FILE *f, const int start)
     }
 
     /* Comments */
-    fseek(f, mfh.extralen, SEEK_CUR);
+    xmp_fseek(f, mfh.extralen, SEEK_CUR);
 
     /* Read samples */
     D_(D_INFO "Stored samples: %d", mod->smp);

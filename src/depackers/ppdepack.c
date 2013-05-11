@@ -42,9 +42,9 @@
 #define val(p) ((p)[0]<<16 | (p)[1] << 8 | (p)[2])
 
 
-static int savefile(FILE *fo, void *mem, size_t length)
+static int savefile(xmp_file fo, void *mem, size_t length)
 {
-  int ok = fo && (fwrite(mem, 1, length, fo) == length);
+  int ok = fo && (xmp_fwrite(mem, 1, length, fo) == length);
   return ok;
 }
 
@@ -190,7 +190,7 @@ static inline int ppValidate(uint8 *src, uint8 *offset_lens,
 }                     
 #endif
 
-static int ppcrack(FILE *fo, uint8 *data, uint32 len)
+static int ppcrack(xmp_file fo, uint8 *data, uint32 len)
 {
   /* PP FORMAT:
    *      1 longword identifier           'PP20' or 'PX20'
@@ -319,7 +319,7 @@ return success;
 }
 
 
-static int ppdepack(uint8 *src, size_t s, FILE *fo)
+static int ppdepack(uint8 *src, size_t s, xmp_file fo)
 {
   int success;
   success = ppcrack(fo, (uint8 *)src, s);
@@ -327,17 +327,15 @@ static int ppdepack(uint8 *src, size_t s, FILE *fo)
 }
 
 
-int decrunch_pp(FILE *f, FILE *fo)
+int decrunch_pp(xmp_file f, xmp_file fo)
 {
     uint8 *packed /*, *unpacked */;
     int plen, unplen;
-    struct stat st;
 
     if (fo == NULL)
         goto err;
 
-    fstat(fileno(f), &st);
-    plen = st.st_size;
+    plen = xmp_fsize(f);
     //counter = 0;
 
     /* Amiga longwords are only on even addresses.
@@ -358,7 +356,7 @@ int decrunch_pp(FILE *f, FILE *fo)
 	 goto err;
     }
 
-    fread (packed, plen, 1, f);
+    xmp_fread (packed, plen, 1, f);
 
     /* Hmmh... original pp20 only support efficiency from 9 9 9 9 up to 9 10 12 13, afaik
      * but the xfd detection code says this... *sigh*

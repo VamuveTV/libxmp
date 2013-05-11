@@ -22,8 +22,8 @@
 #endif
 #include <unistd.h>
 
-static int mfp_test(FILE *, char *, const int);
-static int mfp_load(struct module_data *, FILE *, const int);
+static int mfp_test(xmp_file, char *, const int);
+static int mfp_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader mfp_loader = {
 	"Magnetic Fields Packer",
@@ -31,12 +31,12 @@ const struct format_loader mfp_loader = {
 	mfp_load
 };
 
-static int mfp_test(FILE *f, char *t, const int start)
+static int mfp_test(xmp_file f, char *t, const int start)
 {
 	uint8 buf[384];
 	int i, len, lps, lsz;
 
-	if (fread(buf, 1, 384, f) < 384)
+	if (xmp_fread(buf, 1, 384, f) < 384)
 		return -1;
 
 	/* check restart byte */
@@ -82,14 +82,14 @@ static int mfp_test(FILE *f, char *t, const int start)
 	return 0;
 }
 
-static int mfp_load(struct module_data *m, FILE *f, const int start)
+static int mfp_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, k, x, y;
 	struct xmp_event *event;
 	struct stat st;
 	char smp_filename[PATH_MAX];
-	FILE *s;
+	xmp_file s;
 	int size1, size2;
 	int pat_addr, pat_table[128][4];
 	uint8 buf[1024], mod_event[4];
@@ -162,7 +162,7 @@ static int mfp_load(struct module_data *m, FILE *f, const int start)
 
 	D_(D_INFO "Stored patterns: %d ", mod->pat);
 
-	pat_addr = ftell(f);
+	pat_addr = xmp_ftell(f);
 
 	for (i = 0; i < mod->pat; i++) {
 		PATTERN_ALLOC(i);
@@ -170,9 +170,9 @@ static int mfp_load(struct module_data *m, FILE *f, const int start)
 		TRACK_ALLOC(i);
 
 		for (j = 0; j < 4; j++) {
-			fseek(f, pat_addr + pat_table[i][j], SEEK_SET);
+			xmp_fseek(f, pat_addr + pat_table[i][j], SEEK_SET);
 
-			fread(buf, 1, 1024, f);
+			xmp_fread(buf, 1, 1024, f);
 
 			for (row = k = 0; k < 4; k++) {
 				for (x = 0; x < 4; x++) {
@@ -212,7 +212,7 @@ static int mfp_load(struct module_data *m, FILE *f, const int start)
 			goto err;
 		}
 	}
-	if ((s = fopen(smp_filename, "rb")) == NULL) {
+	if ((s = xmp_fopen(smp_filename, "rb")) == NULL) {
 		fprintf(stderr, "libxmp: can't open sample file %s\n",
 								smp_filename);
 		goto err;
@@ -223,7 +223,7 @@ static int mfp_load(struct module_data *m, FILE *f, const int start)
 				  &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 
-	fclose(s);
+	xmp_fclose(s);
 
 	m->quirk |= QUIRK_MODRNG;
 

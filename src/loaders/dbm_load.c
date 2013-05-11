@@ -17,8 +17,8 @@
 #define MAGIC_DBM0	MAGIC4('D','B','M','0')
 
 
-static int dbm_test(FILE *, char *, const int);
-static int dbm_load (struct module_data *, FILE *, const int);
+static int dbm_test(xmp_file, char *, const int);
+static int dbm_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader dbm_loader = {
 	"DigiBooster Pro (DBM)",
@@ -26,12 +26,12 @@ const struct format_loader dbm_loader = {
 	dbm_load
 };
 
-static int dbm_test(FILE * f, char *t, const int start)
+static int dbm_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_DBM0)
 		return -1;
 
-	fseek(f, 12, SEEK_CUR);
+	xmp_fseek(f, 12, SEEK_CUR);
 	read_title(f, t, 44);
 
 	return 0;
@@ -43,7 +43,7 @@ struct local_data {
 };
 
 
-static void get_info(struct module_data *m, int size, FILE *f, void *parm)
+static void get_info(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
@@ -58,7 +58,7 @@ static void get_info(struct module_data *m, int size, FILE *f, void *parm)
 	INSTRUMENT_INIT();
 }
 
-static void get_song(struct module_data *m, int size, FILE *f, void *parm)
+static void get_song(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -70,7 +70,7 @@ static void get_song(struct module_data *m, int size, FILE *f, void *parm)
 
 	data->have_song = 1;
 
-	fread(buffer, 44, 1, f);
+	xmp_fread(buffer, 44, 1, f);
 	D_(D_INFO "Song name: %s", buffer);
 
 	mod->len = read16b(f);
@@ -80,7 +80,7 @@ static void get_song(struct module_data *m, int size, FILE *f, void *parm)
 		mod->xxo[i] = read16b(f);
 }
 
-static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
+static void get_inst(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i;
@@ -93,7 +93,7 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
 		mod->xxi[i].nsm = 1;
-		fread(buffer, 30, 1, f);
+		xmp_fread(buffer, 30, 1, f);
 		copy_adjust(mod->xxi[i].name, buffer, 30);
 		snum = read16b(f);
 		if (snum == 0 || snum > mod->smp)
@@ -118,7 +118,7 @@ static void get_inst(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_patt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, c, r, n, sz;
@@ -208,7 +208,7 @@ static void get_patt(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_smpl(struct module_data *m, int size, FILE *f, void *parm)
+static void get_smpl(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, flags;
@@ -225,7 +225,7 @@ static void get_smpl(struct module_data *m, int size, FILE *f, void *parm)
 
 		if (flags & 0x04) {	/* Skip 32-bit samples */
 			mod->xxs[i].len <<= 2;
-			fseek(f, mod->xxs[i].len, SEEK_CUR);
+			xmp_fseek(f, mod->xxs[i].len, SEEK_CUR);
 			continue;
 		}
 		
@@ -244,7 +244,7 @@ static void get_smpl(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static void get_venv(struct module_data *m, int size, FILE *f, void *parm)
+static void get_venv(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, nenv, ins;
@@ -270,7 +270,7 @@ static void get_venv(struct module_data *m, int size, FILE *f, void *parm)
 	}
 }
 
-static int dbm_load(struct module_data *m, FILE *f, const int start)
+static int dbm_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	iff_handle handle;
@@ -286,8 +286,8 @@ static int dbm_load(struct module_data *m, FILE *f, const int start)
 	data.have_song = 0;
 	version = read16b(f);
 
-	fseek(f, 10, SEEK_CUR);
-	fread(name, 1, 44, f);
+	xmp_fseek(f, 10, SEEK_CUR);
+	xmp_fread(name, 1, 44, f);
 
 	handle = iff_new();
 	if (handle == NULL)
@@ -307,7 +307,7 @@ static int dbm_load(struct module_data *m, FILE *f, const int start)
 	MODULE_INFO();
 
 	/* Load IFF chunks */
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		iff_chunk(handle, m, f, &data);
 	}
 

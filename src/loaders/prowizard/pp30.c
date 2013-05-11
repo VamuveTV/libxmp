@@ -44,39 +44,39 @@ void Depack_PP30 (FILE * in, FILE * out)
 		for (j = 0; j < 22; j++)	/*sample name */
 			fwrite (&c1, 1, 1, out);
 
-		fread (&c1, 1, 1, in);	/* size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* size */
+		xmp_fread (&c2, 1, 1, in);
 		ssize += (((c1 << 8) + c2) * 2);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* finetune */
+		xmp_fread (&c1, 1, 1, in);	/* finetune */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* volume */
+		xmp_fread (&c1, 1, 1, in);	/* volume */
 		fwrite (&c1, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop start */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop start */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
-		fread (&c1, 1, 1, in);	/* loop size */
-		fread (&c2, 1, 1, in);
+		xmp_fread (&c1, 1, 1, in);	/* loop size */
+		xmp_fread (&c2, 1, 1, in);
 		fwrite (&c1, 1, 1, out);
 		fwrite (&c2, 1, 1, out);
 	}
 
 	/* pattern table lenght */
-	fread (&NOP, 1, 1, in);
+	xmp_fread (&NOP, 1, 1, in);
 	fwrite (&NOP, 1, 1, out);
 
 	/*printf ( "Number of patterns : %d\n" , NOP ); */
 
 	/* NoiseTracker restart byte */
-	fread (&c1, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
 	fwrite (&c1, 1, 1, out);
 
 	Max = 0;
 	for (j = 0; j < 4; j++) {
 		for (i = 0; i < 128; i++) {
-			fread (&c1, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
 			Tracks_Numbers[j][i] = c1;
 			if (Tracks_Numbers[j][i] > Max)
 				Max = Tracks_Numbers[j][i];
@@ -106,24 +106,24 @@ void Depack_PP30 (FILE * in, FILE * out)
 	/*printf ( "Highest track number : %d\n" , Max ); */
 	for (j = 0; j <= Max; j++) {
 		for (i = 0; i < 64; i++) {
-			fread (&c1, 1, 1, in);
-			fread (&c2, 1, 1, in);
+			xmp_fread (&c1, 1, 1, in);
+			xmp_fread (&c2, 1, 1, in);
 			Tracks_PrePointers[j][i] = ((c1 << 8) + c2) / 4;
 		}
 	}
 
 	/* read "reference table" size */
-	fread (&c1, 1, 1, in);
-	fread (&c2, 1, 1, in);
-	fread (&c3, 1, 1, in);
-	fread (&c4, 1, 1, in);
+	xmp_fread (&c1, 1, 1, in);
+	xmp_fread (&c2, 1, 1, in);
+	xmp_fread (&c3, 1, 1, in);
+	xmp_fread (&c4, 1, 1, in);
 
 	RTS = (c1 << 24) + (c2 << 16) + (c3 << 8) + c4;
 
 
 	/* read "reference Table" */
 	reftab = (uint8 *) malloc (RTS);
-	fread (reftab, RTS, 1, in);
+	xmp_fread (reftab, RTS, 1, in);
 
 	/* NOW, the real shit takes place :) */
 	for (i = 0; i < NOP; i++) {
@@ -195,7 +195,7 @@ void Depack_PP30 (FILE * in, FILE * out)
 
 	/*printf ( "Total sample size : %ld\n" , ssize ); */
 	reftab = (uint8 *) malloc (ssize);
-	fread (reftab, ssize, 1, in);
+	xmp_fread (reftab, ssize, 1, in);
 	fwrite (reftab, ssize, 1, out);
 	free (reftab);
 

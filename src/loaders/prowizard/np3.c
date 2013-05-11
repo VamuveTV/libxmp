@@ -13,7 +13,7 @@
 #include "prowiz.h"
 
 
-static int depack_np3(FILE *in, FILE *out)
+static int depack_np3(xmp_file in, xmp_file out)
 {
 	uint8 tmp[1024];
 	uint8 c1, c2, c3, c4;
@@ -42,21 +42,21 @@ static int depack_np3(FILE *in, FILE *out)
 
 	/* read sample descriptions */
 	for (i = 0; i < nins; i++) {
-		fread(tmp, 1, 16, in);
+		xmp_fread(tmp, 1, 16, in);
 		pw_write_zero(out, 22);		/* sample name */
 		write16b(out, size = readmem16b(tmp + 6));
 		ssize += size * 2;
 		write8(out, tmp[0]);		/* write finetune */
 		write8(out, tmp[1]);		/* write volume */
-		fwrite(tmp + 14, 2, 1, out);	/* write loop start */
-		fwrite(tmp + 12, 2, 1, out);	/* write loop size */
+		xmp_fwrite(tmp + 14, 2, 1, out);	/* write loop start */
+		xmp_fwrite(tmp + 12, 2, 1, out);	/* write loop size */
 	}
 
 	/* fill up to 31 samples */
 	memset(tmp, 0, 30);
 	tmp[29] = 0x01;
 	for (; i < 31; i++)
-		fwrite(tmp, 30, 1, out);
+		xmp_fwrite(tmp, 30, 1, out);
 
 	write8(out, len);		/* write size of pattern list */
 	write8(out, 0x7f);		/* write noisetracker byte */
@@ -72,7 +72,7 @@ static int depack_np3(FILE *in, FILE *out)
 	}
 	npat++;
 
-	fwrite(ptable, 128, 1, out);	/* write pattern table */
+	xmp_fwrite(ptable, 128, 1, out);	/* write pattern table */
 	write32b(out, PW_MOD_MAGIC);	/* write ptk ID */
 
 	/* read tracks addresses per pattern */
@@ -86,13 +86,13 @@ static int depack_np3(FILE *in, FILE *out)
 		if ((trk_addr[i][3] = read16b(in)) > max_addr)
 			max_addr = trk_addr[i][3];
 	}
-	trk_start = ftell(in);
+	trk_start = xmp_ftell(in);
 
 	/* the track data now ... */
 	for (i = 0; i < npat; i++) {
 		memset(tmp, 0, 1024);
 		for (j = 0; j < 4; j++) {
-			fseek(in, trk_start + trk_addr[i][3 - j], SEEK_SET);
+			xmp_fseek(in, trk_start + trk_addr[i][3 - j], SEEK_SET);
 			for (k = 0; k < 64; k++) {
 				int x = k * 16 + j * 4;
 
@@ -134,15 +134,15 @@ static int depack_np3(FILE *in, FILE *out)
 					break;
 			}
 
-			if (ftell(in) > smp_addr)
-				smp_addr = ftell(in);
+			if (xmp_ftell(in) > smp_addr)
+				smp_addr = xmp_ftell(in);
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	if (smp_addr & 1)
 		smp_addr++;
-	fseek(in, smp_addr, SEEK_SET);
+	xmp_fseek(in, smp_addr, SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

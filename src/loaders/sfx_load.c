@@ -22,8 +22,8 @@
 #define MAGIC_SONG	MAGIC4('S','O','N','G')
 
 
-static int sfx_test (FILE *, char *, const int);
-static int sfx_load (struct module_data *, FILE *, const int);
+static int sfx_test (xmp_file, char *, const int);
+static int sfx_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader sfx_loader = {
     "SoundFX",
@@ -31,13 +31,13 @@ const struct format_loader sfx_loader = {
     sfx_load
 };
 
-static int sfx_test(FILE *f, char *t, const int start)
+static int sfx_test(xmp_file f, char *t, const int start)
 {
     uint32 a, b;
 
-    fseek(f, 4 * 15, SEEK_CUR);
+    xmp_fseek(f, 4 * 15, SEEK_CUR);
     a = read32b(f);
-    fseek(f, 4 * 15, SEEK_CUR);
+    xmp_fseek(f, 4 * 15, SEEK_CUR);
     b = read32b(f);
 
     if (a != MAGIC_SONG && b != MAGIC_SONG)
@@ -71,7 +71,7 @@ struct sfx_header2 {
 };
 
 
-static int sfx_13_20_load(struct module_data *m, FILE *f, const int nins, const int start)
+static int sfx_13_20_load(struct module_data *m, xmp_file f, const int nins, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j;
@@ -89,7 +89,7 @@ static int sfx_13_20_load(struct module_data *m, FILE *f, const int nins, const 
 
     sfx.magic = read32b(f);
     sfx.delay = read16b(f);
-    fread(&sfx.unknown, 14, 1, f);
+    xmp_fread(&sfx.unknown, 14, 1, f);
 
     if (sfx.magic != MAGIC_SONG)
 	return -1;
@@ -99,7 +99,7 @@ static int sfx_13_20_load(struct module_data *m, FILE *f, const int nins, const 
     mod->bpm = 14565 * 122 / sfx.delay;
 
     for (i = 0; i < mod->ins; i++) {
-	fread(&ins[i].name, 22, 1, f);
+	xmp_fread(&ins[i].name, 22, 1, f);
 	ins[i].len = read16b(f);
 	ins[i].finetune = read8(f);
 	ins[i].volume = read8(f);
@@ -109,7 +109,7 @@ static int sfx_13_20_load(struct module_data *m, FILE *f, const int nins, const 
 
     sfx2.len = read8(f);
     sfx2.restart = read8(f);
-    fread(&sfx2.order, 128, 1, f);
+    xmp_fread(&sfx2.order, 128, 1, f);
 
     mod->len = sfx2.len;
     if (mod->len > 0x7f)
@@ -163,7 +163,7 @@ static int sfx_13_20_load(struct module_data *m, FILE *f, const int nins, const 
 
 	for (j = 0; j < 64 * mod->chn; j++) {
 	    event = &EVENT(i, j % mod->chn, j / mod->chn);
-	    fread(ev, 1, 4, f);
+	    xmp_fread(ev, 1, 4, f);
 
 	    event->note = period_to_note((LSN (ev[0]) << 8) | ev[1]);
 	    event->ins = (MSN (ev[0]) << 4) | MSN (ev[2]);
@@ -216,7 +216,7 @@ static int sfx_13_20_load(struct module_data *m, FILE *f, const int nins, const 
 }
 
 
-static int sfx_load(struct module_data *m, FILE *f, const int start)
+static int sfx_load(struct module_data *m, xmp_file f, const int start)
 {
     if (sfx_13_20_load(m, f, 15, start) < 0)
 	return sfx_13_20_load(m, f, 31, start);

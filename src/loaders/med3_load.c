@@ -19,8 +19,8 @@
 #define MAGIC_MED3	MAGIC4('M','E','D',3)
 
 
-static int med3_test(FILE *, char *, const int);
-static int med3_load (struct module_data *, FILE *, const int);
+static int med3_test(xmp_file, char *, const int);
+static int med3_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader med3_loader = {
 	"MED 2.00 MED3 (MED)",
@@ -28,7 +28,7 @@ const struct format_loader med3_loader = {
 	med3_load
 };
 
-static int med3_test(FILE *f, char *t, const int start)
+static int med3_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) !=  MAGIC_MED3)
 		return -1;
@@ -200,7 +200,7 @@ static void unpack_block(struct module_data *m, uint16 bnum, uint8 *from)
 }
 
 
-static int med3_load(struct module_data *m, FILE *f, const int start)
+static int med3_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j;
@@ -258,7 +258,7 @@ static int med3_load(struct module_data *m, FILE *f, const int start)
 	mod->trk = mod->chn * mod->pat;
 
 	mod->len = read16b(f);
-	fread(mod->xxo, 1, mod->len, f);
+	xmp_fread(mod->xxo, 1, mod->len, f);
 	mod->spd = read16b(f);
 	if (mod->spd > 10) {
 		mod->bpm = 125 * mod->spd / 33;
@@ -268,7 +268,7 @@ static int med3_load(struct module_data *m, FILE *f, const int start)
 	read8(f);			/* flags */
 	sliding = read16b(f);		/* sliding */
 	read32b(f);			/* jumping mask */
-	fseek(f, 16, SEEK_CUR);		/* rgb */
+	xmp_fseek(f, 16, SEEK_CUR);		/* rgb */
 
 	/* read midi channels */
 	mask = read32b(f);
@@ -344,7 +344,7 @@ static int med3_load(struct module_data *m, FILE *f, const int start)
                 else
 			*(conv + 3) = read32b(f);
 
-		fread(conv + 4, 1, convsz, f);
+		xmp_fread(conv + 4, 1, convsz, f);
 
                 unpack_block(m, i, (uint8 *)conv);
 

@@ -18,7 +18,7 @@
 #include "prowiz.h"
 
 
-static int depack_fuzz(FILE *in, FILE *out)
+static int depack_fuzz(xmp_file in, xmp_file out)
 {
 	uint8 c1;
 	uint8 data[1024];
@@ -42,7 +42,7 @@ static int depack_fuzz(FILE *in, FILE *out)
 
 	for (i = 0; i < 31; i++) {
 		pw_move_data(out, in, 22);	/*sample name */
-		fseek(in, 38, SEEK_CUR);
+		xmp_fseek(in, 38, SEEK_CUR);
 		write16b(out, size = read16b(in));
 		ssize += size * 2;
 		lps = read16b(in);		/* loop start */
@@ -58,12 +58,12 @@ static int depack_fuzz(FILE *in, FILE *out)
 	write8(out, 0x7f);		/* write noisetracker byte */
 
 	/* place file pointer at track number list address */
-	fseek(in, 2118, SEEK_SET);
+	xmp_fseek(in, 2118, SEEK_SET);
 
 	/* read tracks numbers */
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < len; j++)
-			fread(&tidx[j][i * 4], 1, 4, in);
+			xmp_fread(&tidx[j][i * 4], 1, 4, in);
 	}
 
 	/* sort tracks numbers */
@@ -126,7 +126,7 @@ static int depack_fuzz(FILE *in, FILE *out)
 		status = 1;
 	}
 
-	fwrite(ord, 128, 1, out);	/* write pattern list */
+	xmp_fwrite(ord, 128, 1, out);	/* write pattern list */
 	write32b(out, PW_MOD_MAGIC);	/* write ID */
 
 	/* pattern data */
@@ -136,17 +136,17 @@ static int depack_fuzz(FILE *in, FILE *out)
 		memset(data, 0, 1024);
 		memset(track, 0, 4 << 8);
 
-		fseek(in, l + (tidx_real[i][0] << 8), SEEK_SET);
-		fread(track[0], 256, 1, in);
+		xmp_fseek(in, l + (tidx_real[i][0] << 8), SEEK_SET);
+		xmp_fread(track[0], 256, 1, in);
 
-		fseek(in, l + (tidx_real[i][1] << 8), SEEK_SET);
-		fread(track[1], 256, 1, in);
+		xmp_fseek(in, l + (tidx_real[i][1] << 8), SEEK_SET);
+		xmp_fread(track[1], 256, 1, in);
 
-		fseek(in, l + (tidx_real[i][2] << 8), SEEK_SET);
-		fread(track[2], 256, 1, in);
+		xmp_fseek(in, l + (tidx_real[i][2] << 8), SEEK_SET);
+		xmp_fread(track[2], 256, 1, in);
 
-		fseek(in, l + (tidx_real[i][3] << 8), SEEK_SET);
-		fread(track[3], 256, 1, in);
+		xmp_fseek(in, l + (tidx_real[i][3] << 8), SEEK_SET);
+		xmp_fread(track[3], 256, 1, in);
 
 		for (j = 0; j < 64; j++) {
 			memcpy(&data[j * 16     ], &track[0][j * 4], 4);
@@ -155,12 +155,12 @@ static int depack_fuzz(FILE *in, FILE *out)
 			memcpy(&data[j * 16 + 12], &track[3][j * 4], 4);
 			data[j * 16 + 15] = track[3][j * 4 + 3];
 		}
-		fwrite(data, 1024, 1, out);
+		xmp_fwrite(data, 1024, 1, out);
 	}
 
 	/* sample data */
 	/* bypass the "SEnd" unidentified ID */
-	fseek(in, l + (ntrk << 8) + 4, SEEK_SET);
+	xmp_fseek(in, l + (ntrk << 8) + 4, SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

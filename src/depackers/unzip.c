@@ -59,13 +59,13 @@ struct zip_local_file_header_t
 /*-------------------------- fileio.c ---------------------------*/
 
 
-static int read_chars(FILE *in, char *s, int count)
+static int read_chars(xmp_file in, char *s, int count)
 {
 int t;
 
   for (t=0; t<count; t++)
   {
-    s[t]=getc(in);
+    s[t]=xmp_fgetc(in);
   }
 
   s[t]=0;
@@ -73,27 +73,27 @@ int t;
   return 0;
 }
 
-static int read_buffer(FILE *in, unsigned char *buffer, int len)
+static int read_buffer(xmp_file in, unsigned char *buffer, int len)
 {
 int t;
 
   t=0;
   while (t<len)
   {
-    t=t+fread(buffer+t,1,len-t,in);
+    t=t+xmp_fread(buffer+t,1,len-t,in);
   }
 
   return t;
 }
 
-static int write_buffer(FILE *out, unsigned char *buffer, int len)
+static int write_buffer(xmp_file out, unsigned char *buffer, int len)
 {
 int t;
 
   t=0;
   while (t<len)
   {
-    t=t+fwrite(buffer+t,1,len-t,out);
+    t=t+xmp_fwrite(buffer+t,1,len-t,out);
   }
 
   return t;
@@ -189,7 +189,7 @@ int ch;
 }
 */
 
-static unsigned int copy_file(FILE *in, FILE *out, int len, struct inflate_data *data)
+static unsigned int copy_file(xmp_file in, xmp_file out, int len, struct inflate_data *data)
 {
 unsigned char buffer[BUFFER_SIZE];
 unsigned int checksum;
@@ -251,7 +251,7 @@ printf("path=%s\n",path);
 }
 #endif
 
-int read_zip_header(FILE *in, struct zip_local_file_header_t *local_file_header)
+int read_zip_header(xmp_file in, struct zip_local_file_header_t *local_file_header)
 {
   local_file_header->signature=read_int(in);
   if (local_file_header->signature!=0x04034b50) return -1;
@@ -697,7 +697,7 @@ int i;
  * pass an array of patterns containing files we want to exclude from
  * our search (such as README, *.nfo, etc)
  */
-int kunzip_file_with_name(FILE *in, FILE *out)
+int kunzip_file_with_name(xmp_file in, xmp_file out)
 {
 struct zip_local_file_header_t local_file_header;
 int ret_code;
@@ -718,7 +718,7 @@ struct inflate_data data;
   read_chars(in,local_file_header.file_name,local_file_header.file_name_length);
   read_chars(in,(char *)local_file_header.extra_field,local_file_header.extra_field_length);
 
-  marker=ftell(in);
+  marker=xmp_ftell(in);
 
 #ifdef DEBUG
   print_zip_header(&local_file_header);
@@ -755,7 +755,7 @@ struct inflate_data data;
   free(local_file_header.file_name);
   free(local_file_header.extra_field);
 
-  fseek(in,marker+local_file_header.compressed_size,SEEK_SET);
+  xmp_fseek(in,marker+local_file_header.compressed_size,SEEK_SET);
 
   if ((local_file_header.general_purpose_bit_flag&8)!=0)
   {
@@ -767,7 +767,7 @@ struct inflate_data data;
   return ret_code;
 }
 
-int kunzip_get_offset_excluding(FILE *in)
+int kunzip_get_offset_excluding(xmp_file in)
 {
 struct zip_local_file_header_t local_file_header;
 int i=0,curr;
@@ -777,13 +777,13 @@ char name[1024];
 
   while(1)
   {
-    curr=ftell(in);
+    curr=xmp_ftell(in);
     i=read_zip_header(in,&local_file_header);
     if (i==-1) break;
 
     /*if (skip_offset<0 || curr>skip_offset)*/
     {
-      marker=ftell(in);  /* nasty code.. please make it nice later */
+      marker=xmp_ftell(in);  /* nasty code.. please make it nice later */
 
       name_size = local_file_header.file_name_length;
       if (name_size > 1023) {
@@ -792,14 +792,14 @@ char name[1024];
       read_chars(in,name,name_size);
       name[name_size]=0;
 
-      fseek(in,marker,SEEK_SET); /* and part 2 of nasty code */
+      xmp_fseek(in,marker,SEEK_SET); /* and part 2 of nasty code */
 
       if (!exclude_match(name)) {
         break;
       }
     }
 
-    fseek(in,local_file_header.compressed_size+
+    xmp_fseek(in,local_file_header.compressed_size+
              local_file_header.file_name_length+
              local_file_header.extra_field_length,SEEK_CUR);
   }
@@ -810,7 +810,7 @@ char name[1024];
   { return -1; }
 }
 
-int decrunch_zip(FILE *in, FILE *out)
+int decrunch_zip(xmp_file in, xmp_file out)
 {
   int offset;
 
@@ -818,7 +818,7 @@ int decrunch_zip(FILE *in, FILE *out)
   if (offset < 0)
     return -1;
 
-  fseek(in, offset, SEEK_SET);
+  xmp_fseek(in, offset, SEEK_SET);
 
   kunzip_file_with_name(in,out);
 

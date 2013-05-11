@@ -17,8 +17,8 @@
 #include "loader.h"
 
 
-static int tcb_test(FILE *, char *, const int);
-static int tcb_load (struct module_data *, FILE *, const int);
+static int tcb_test(xmp_file, char *, const int);
+static int tcb_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader tcb_loader = {
 	"TCB Tracker",
@@ -26,11 +26,11 @@ const struct format_loader tcb_loader = {
 	tcb_load
 };
 
-static int tcb_test(FILE *f, char *t, const int start)
+static int tcb_test(xmp_file f, char *t, const int start)
 {
 	uint8 buffer[10];
 
-	if (fread(buffer, 1, 8, f) < 8)
+	if (xmp_fread(buffer, 1, 8, f) < 8)
 		return -1;
 	if (memcmp(buffer, "AN COOL.", 8) && memcmp(buffer, "AN COOL!", 8))
 		return -1;
@@ -40,7 +40,7 @@ static int tcb_test(FILE *f, char *t, const int start)
 	return 0;
 }
 
-static int tcb_load(struct module_data *m, FILE *f, const int start)
+static int tcb_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -51,7 +51,7 @@ static int tcb_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fread(buffer, 8, 1, f);
+	xmp_fread(buffer, 8, 1, f);
 
 	set_type(m, "TCB Tracker", buffer);
 
@@ -80,7 +80,7 @@ static int tcb_load(struct module_data *m, FILE *f, const int start)
 	/* Read instrument names */
 	for (i = 0; i < mod->ins; i++) {
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-		fread(buffer, 8, 1, f);
+		xmp_fread(buffer, 8, 1, f);
 		copy_adjust(mod->xxi[i].name, buffer, 8);
 	}
 
@@ -130,7 +130,7 @@ static int tcb_load(struct module_data *m, FILE *f, const int start)
 		}
 	}
 
-	base_offs = ftell(f);
+	base_offs = xmp_ftell(f);
 	read32b(f);	/* remaining size */
 
 	/* Read instrument data */
@@ -176,7 +176,7 @@ static int tcb_load(struct module_data *m, FILE *f, const int start)
 	D_(D_INFO "Stored samples: %d", mod->smp);
 
 	for (i = 0; i < mod->ins; i++) {
-		fseek(f, start + base_offs + soffs[i], SEEK_SET);
+		xmp_fseek(f, start + base_offs + soffs[i], SEEK_SET);
 		load_sample(m, f, SAMPLE_FLAG_UNS, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 

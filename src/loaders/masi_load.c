@@ -61,8 +61,8 @@
 #define MAGIC_OPLH	MAGIC4('O','P','L','H')
 
 
-static int masi_test (FILE *, char *, const int);
-static int masi_load (struct module_data *, FILE *, const int);
+static int masi_test (xmp_file, char *, const int);
+static int masi_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader masi_loader = {
 	"Epic MegaGames MASI (PSM)",
@@ -70,7 +70,7 @@ const struct format_loader masi_loader = {
 	masi_load
 };
 
-static int masi_test(FILE *f, char *t, const int start)
+static int masi_test(xmp_file f, char *t, const int start)
 {
 	int val;
 
@@ -88,7 +88,7 @@ static int masi_test(FILE *f, char *t, const int start)
 
 	read32b(f);
 	val = read32l(f);
-	fseek(f, val, SEEK_CUR);
+	xmp_fseek(f, val, SEEK_CUR);
 
 	if (read32b(f) == MAGIC_TITL) {
 		val = read32l(f);
@@ -108,20 +108,20 @@ struct local_data {
     uint8 *pord;
 };
 
-static void get_sdft(struct module_data *m, int size, FILE *f, void *parm)
+static void get_sdft(struct module_data *m, int size, xmp_file f, void *parm)
 {
 }
 
-static void get_titl(struct module_data *m, int size, FILE *f, void *parm)
+static void get_titl(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	char buf[40];
 	
-	fread(buf, 1, 40, f);
+	xmp_fread(buf, 1, 40, f);
 	strncpy(mod->name, buf, size > 32 ? 32 : size);
 }
 
-static void get_dsmp_cnt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_dsmp_cnt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
@@ -129,20 +129,20 @@ static void get_dsmp_cnt(struct module_data *m, int size, FILE *f, void *parm)
 	mod->smp = mod->ins;
 }
 
-static void get_pbod_cnt(struct module_data *m, int size, FILE *f, void *parm)
+static void get_pbod_cnt(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
 	char buf[20];
 
 	mod->pat++;
-	fread(buf, 1, 20, f);
+	xmp_fread(buf, 1, 20, f);
 	if (buf[9] != 0 && buf[13] == 0)
 		data->sinaria = 1;
 }
 
 
-static void get_dsmp(struct module_data *m, int size, FILE *f, void *parm)
+static void get_dsmp(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -150,15 +150,15 @@ static void get_dsmp(struct module_data *m, int size, FILE *f, void *parm)
 	int finetune;
 
 	read8(f);				/* flags */
-	fseek(f, 8, SEEK_CUR);			/* songname */
-	fseek(f, data->sinaria ? 8 : 4, SEEK_CUR);	/* smpid */
+	xmp_fseek(f, 8, SEEK_CUR);			/* songname */
+	xmp_fseek(f, data->sinaria ? 8 : 4, SEEK_CUR);	/* smpid */
 
 	i = data->cur_ins;
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-	fread(&mod->xxi[i].name, 1, 31, f);
+	xmp_fread(&mod->xxi[i].name, 1, 31, f);
 	str_adj((char *)mod->xxi[i].name);
-	fseek(f, 8, SEEK_CUR);
+	xmp_fseek(f, 8, SEEK_CUR);
 	read8(f);		/* insno */
 	read8(f);
 	mod->xxs[i].len = read32l(f);
@@ -196,14 +196,14 @@ static void get_dsmp(struct module_data *m, int size, FILE *f, void *parm)
 	c2spd_to_note(srate, &mod->xxi[i].sub[0].xpo, &mod->xxi[i].sub[0].fin);
 	mod->xxi[i].sub[0].fin += finetune;
 
-	fseek(f, 16, SEEK_CUR);
+	xmp_fseek(f, 16, SEEK_CUR);
 	load_sample(m, f, SAMPLE_FLAG_8BDIFF, &mod->xxs[i], NULL);
 
 	data->cur_ins++;
 }
 
 
-static void get_pbod(struct module_data *m, int size, FILE *f, void *parm)
+static void get_pbod(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -216,7 +216,7 @@ static void get_pbod(struct module_data *m, int size, FILE *f, void *parm)
 	i = data->cur_pat;
 
 	len = read32l(f);
-	fread(data->pnam + i * 8, 1, data->sinaria ? 8 : 4, f);
+	xmp_fread(data->pnam + i * 8, 1, data->sinaria ? 8 : 4, f);
 
 	rows = read16l(f);
 
@@ -350,15 +350,15 @@ printf("p%d r%d c%d: unknown effect %02x %02x\n", i, r, chan, fxt, fxp);
 	data->cur_pat++;
 }
 
-static void get_song(struct module_data *m, int size, FILE *f, void *parm)
+static void get_song(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 
-	fseek(f, 10, SEEK_CUR);
+	xmp_fseek(f, 10, SEEK_CUR);
 	mod->chn = read8(f);
 }
 
-static void get_song_2(struct module_data *m, int size, FILE *f, void *parm)
+static void get_song_2(struct module_data *m, int size, xmp_file f, void *parm)
 {
 	struct xmp_module *mod = &m->mod;
 	struct local_data *data = (struct local_data *)parm;
@@ -366,7 +366,7 @@ static void get_song_2(struct module_data *m, int size, FILE *f, void *parm)
 	char c, buf[20];
 	int i;
 
-	fread(buf, 1, 9, f);
+	xmp_fread(buf, 1, 9, f);
 	read16l(f);
 
 	D_(D_INFO "Subsong title: %-9.9s", buf);
@@ -375,13 +375,13 @@ static void get_song_2(struct module_data *m, int size, FILE *f, void *parm)
 	while (magic != MAGIC_OPLH) {
 		int skip;
 		skip = read32l(f);;
-		fseek(f, skip, SEEK_CUR);
+		xmp_fseek(f, skip, SEEK_CUR);
 		magic = read32b(f);
 	}
 
 	read32l(f);	/* chunk size */
 
-	fseek(f, 9, SEEK_CUR);		/* unknown data */
+	xmp_fseek(f, 9, SEEK_CUR);		/* unknown data */
 	
 	c = read8(f);
 	for (i = 0; c != 0x01; c = read8(f)) {
@@ -407,12 +407,12 @@ static void get_song_2(struct module_data *m, int size, FILE *f, void *parm)
 	}
 
 	for (; c == 0x01; c = read8(f)) {
-		fread(data->pord + mod->len * 8, 1, data->sinaria ? 8 : 4, f);
+		xmp_fread(data->pord + mod->len * 8, 1, data->sinaria ? 8 : 4, f);
 		mod->len++;
 	}
 }
 
-static int masi_load(struct module_data *m, FILE *f, const int start)
+static int masi_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	iff_handle handle;
@@ -427,11 +427,11 @@ static int masi_load(struct module_data *m, FILE *f, const int start)
 	data.sinaria = 0;
 	mod->name[0] = 0;
 
-	fseek(f, 8, SEEK_CUR);		/* skip file size and FILE */
+	xmp_fseek(f, 8, SEEK_CUR);		/* skip file size and FILE */
 	mod->smp = mod->ins = 0;
 	data.cur_pat = 0;
 	data.cur_ins = 0;
-	offset = ftell(f);
+	offset = xmp_ftell(f);
 
 	handle = iff_new();
 	if (handle == NULL)
@@ -446,7 +446,7 @@ static int masi_load(struct module_data *m, FILE *f, const int start)
 	iff_set_quirk(handle, IFF_LITTLE_ENDIAN);
 
 	/* Load IFF chunks */
-	while (!feof(f)) {
+	while (!xmp_feof(f)) {
 		iff_chunk(handle, m, f, &data);
 	}
 
@@ -466,7 +466,7 @@ static int masi_load(struct module_data *m, FILE *f, const int start)
 	D_(D_INFO "Stored patterns: %d", mod->pat);
 	D_(D_INFO "Stored samples : %d", mod->smp);
 
-	fseek(f, start + offset, SEEK_SET);
+	xmp_fseek(f, start + offset, SEEK_SET);
 
 	mod->len = 0;
 
@@ -481,7 +481,7 @@ static int masi_load(struct module_data *m, FILE *f, const int start)
 	iff_set_quirk(handle, IFF_LITTLE_ENDIAN);
 
 	/* Load IFF chunks */
-	while (!feof (f)) {
+	while (!xmp_feof (f)) {
 		iff_chunk(handle, m, f, &data);
 	}
 

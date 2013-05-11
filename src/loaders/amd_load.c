@@ -10,8 +10,8 @@
 #include "synth.h"
 
 
-static int amd_test (FILE *, char *, const int);
-static int amd_load (struct module_data *, FILE *, const int);
+static int amd_test (xmp_file, char *, const int);
+static int amd_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader amd_loader = {
     "Amusic Adlib Tracker (AMD)",
@@ -19,18 +19,18 @@ const struct format_loader amd_loader = {
     amd_load
 };
 
-static int amd_test(FILE *f, char *t, const int start)
+static int amd_test(xmp_file f, char *t, const int start)
 {
     char buf[9];
 
-    fseek(f, start + 1062, SEEK_SET);
-    if (fread(buf, 1, 9, f) < 9)
+    xmp_fseek(f, start + 1062, SEEK_SET);
+    if (xmp_fread(buf, 1, 9, f) < 9)
 	return -1;
 
     if (memcmp(buf, "<o", 2) || memcmp(buf + 6, "RoR", 3))
 	return -1;
 
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 24);
 
     return 0;
@@ -57,7 +57,7 @@ struct amd_file_header {
 
 
 
-static int amd_load(struct module_data *m, FILE *f, const int start)
+static int amd_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int r, i, j, tmode = 1;
@@ -71,16 +71,16 @@ static int amd_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&afh.name, 24, 1, f);
-    fread(&afh.author, 24, 1, f);
+    xmp_fread(&afh.name, 24, 1, f);
+    xmp_fread(&afh.author, 24, 1, f);
     for (i = 0; i < 26; i++) {
-	fread(&afh.ins[i].name, 23, 1, f);
-	fread(&afh.ins[i].reg, 11, 1, f);
+	xmp_fread(&afh.ins[i].name, 23, 1, f);
+	xmp_fread(&afh.ins[i].reg, 11, 1, f);
     }
     afh.len = read8(f);
     afh.pat = read8(f);
-    fread(&afh.order, 128, 1, f);
-    fread(&afh.magic, 9, 1, f);
+    xmp_fread(&afh.order, 128, 1, f);
+    xmp_fread(&afh.magic, 9, 1, f);
     afh.version = read8(f);
 
     mod->chn = 9;

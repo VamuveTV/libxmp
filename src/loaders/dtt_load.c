@@ -12,8 +12,8 @@
 #define MAGIC_DskS	MAGIC4('D','s','k','S')
 
 
-static int dtt_test(FILE *, char *, const int);
-static int dtt_load (struct module_data *, FILE *, const int);
+static int dtt_test(xmp_file, char *, const int);
+static int dtt_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader dtt_loader = {
 	"Desktop Tracker (DTT)",
@@ -21,7 +21,7 @@ const struct format_loader dtt_loader = {
 	dtt_load
 };
 
-static int dtt_test(FILE *f, char *t, const int start)
+static int dtt_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_DskT)
 		return -1;
@@ -31,7 +31,7 @@ static int dtt_test(FILE *f, char *t, const int start)
 	return 0;
 }
 
-static int dtt_load(struct module_data *m, FILE *f, const int start)
+static int dtt_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -49,22 +49,22 @@ static int dtt_load(struct module_data *m, FILE *f, const int start)
 
 	set_type(m, "Desktop Tracker");
 
-	fread(buf, 1, 64, f);
+	xmp_fread(buf, 1, 64, f);
 	strncpy(mod->name, (char *)buf, XMP_NAME_SIZE);
-	fread(buf, 1, 64, f);
+	xmp_fread(buf, 1, 64, f);
 	/* strncpy(m->author, (char *)buf, XMP_NAME_SIZE); */
 	
 	flags = read32l(f);
 	mod->chn = read32l(f);
 	mod->len = read32l(f);
-	fread(buf, 1, 8, f);
+	xmp_fread(buf, 1, 8, f);
 	mod->spd = read32l(f);
 	mod->rst = read32l(f);
 	mod->pat = read32l(f);
 	mod->ins = mod->smp = read32l(f);
 	mod->trk = mod->pat * mod->chn;
 	
-	fread(mod->xxo, 1, (mod->len + 3) & ~3L, f);
+	xmp_fread(mod->xxo, 1, (mod->len + 3) & ~3L, f);
 
 	MODULE_INFO();
 
@@ -101,7 +101,7 @@ static int dtt_load(struct module_data *m, FILE *f, const int start)
 		mod->xxs[i].flg = looplen > 0 ? XMP_SAMPLE_LOOP : 0;
 		mod->xxs[i].lpe = mod->xxs[i].lps + looplen;
 		mod->xxs[i].len = read32l(f);
-		fread(buf, 1, 32, f);
+		xmp_fread(buf, 1, 32, f);
 		copy_adjust(mod->xxi[i].name, (uint8 *)buf, 32);
 		sdata[i] = read32l(f);
 
@@ -125,7 +125,7 @@ static int dtt_load(struct module_data *m, FILE *f, const int start)
 		mod->xxp[i]->rows = plen[i];
 		TRACK_ALLOC(i);
 
-		fseek(f, start + pofs[i], SEEK_SET);
+		xmp_fseek(f, start + pofs[i], SEEK_SET);
 
 		for (j = 0; j < mod->xxp[i]->rows; j++) {
 			for (k = 0; k < mod->chn; k++) {
@@ -157,7 +157,7 @@ static int dtt_load(struct module_data *m, FILE *f, const int start)
 	/* Read samples */
 	D_(D_INFO "Stored samples: %d", mod->smp);
 	for (i = 0; i < mod->ins; i++) {
-		fseek(f, start + sdata[i], SEEK_SET);
+		xmp_fseek(f, start + sdata[i], SEEK_SET);
 		load_sample(m, f, SAMPLE_FLAG_VIDC, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 

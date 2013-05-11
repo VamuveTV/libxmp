@@ -27,13 +27,13 @@
 struct pw_format {
 	char *name;
 	int (*test)(uint8 *, char *, int);
-	int (*depack)(FILE *, FILE *);
+	int (*depack)(xmp_file, xmp_file);
 	struct list_head list;
 };
 
-int pw_wizardry(int, int, char **);
-int pw_move_data(FILE *, FILE *, int);
-int pw_write_zero(FILE *, int);
+int pw_wizardry(xmp_file, xmp_file, char **);
+int pw_move_data(xmp_file, xmp_file, int);
+int pw_write_zero(xmp_file, int);
 /* int pw_enable(char *, int); */
 int pw_check(unsigned char *, int, struct xmp_test_info *);
 void pw_read_title(unsigned char *, char *, int);

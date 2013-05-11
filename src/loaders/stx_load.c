@@ -70,8 +70,8 @@ struct stx_instrument_header {
 };
 
 
-static int stx_test (FILE *, char *, const int);
-static int stx_load (struct module_data *, FILE *, const int);
+static int stx_test (xmp_file, char *, const int);
+static int stx_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader stx_loader = {
     "STMIK 0.2 (STX)",
@@ -79,23 +79,23 @@ const struct format_loader stx_loader = {
     stx_load
 };
 
-static int stx_test(FILE *f, char *t, const int start)
+static int stx_test(xmp_file f, char *t, const int start)
 {
     char buf[8];
 
-    fseek(f, start + 20, SEEK_SET);
-    if (fread(buf, 1, 8, f) < 8)
+    xmp_fseek(f, start + 20, SEEK_SET);
+    if (xmp_fread(buf, 1, 8, f) < 8)
 	return -1;
     if (memcmp(buf, "!Scream!", 8) && memcmp(buf, "BMOD2STM", 8))
 	return -1;
 
-    fseek(f, start + 60, SEEK_SET);
-    if (fread(buf, 1, 4, f) < 4)
+    xmp_fseek(f, start + 60, SEEK_SET);
+    if (xmp_fread(buf, 1, 4, f) < 4)
 	return -1;
     if (memcmp(buf, "SCRM", 4))
 	return -1;
 
-    fseek(f, start + 0, SEEK_SET);
+    xmp_fseek(f, start + 0, SEEK_SET);
     read_title(f, t, 20);
 
     return 0;
@@ -113,7 +113,7 @@ static const uint8 fx[] = {
 };
 
 
-static int stx_load(struct module_data *m, FILE *f, const int start)
+static int stx_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int c, r, i, broken = 0;
@@ -128,8 +128,8 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&sfh.name, 20, 1, f);
-    fread(&sfh.magic, 8, 1, f);
+    xmp_fread(&sfh.name, 20, 1, f);
+    xmp_fread(&sfh.magic, 8, 1, f);
     sfh.psize = read16l(f);
     sfh.unknown1 = read16l(f);
     sfh.pp_pat = read16l(f);
@@ -147,7 +147,7 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
     sfh.unknown6 = read16l(f);
     sfh.unknown7 = read16l(f);
     sfh.unknown8 = read16l(f);
-    fread(&sfh.magic2, 4, 1, f);
+    xmp_fread(&sfh.magic2, 4, 1, f);
 
     /* BMOD2STM does not convert pitch */
     if (!strncmp ((char *) sfh.magic, "BMOD2STM", 8))
@@ -170,9 +170,9 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
     /* STM2STX 1.0 released with STMIK 0.2 converts STMs with the pattern
      * length encoded in the first two bytes of the pattern (like S3M).
      */
-    fseek(f, start + (sfh.pp_pat << 4), SEEK_SET);
+    xmp_fseek(f, start + (sfh.pp_pat << 4), SEEK_SET);
     x16 = read16l(f);
-    fseek(f, start + (x16 << 4), SEEK_SET);
+    xmp_fseek(f, start + (x16 << 4), SEEK_SET);
     x16 = read16l(f);
     if (x16 == sfh.psize)
 	broken = 1;
@@ -189,22 +189,22 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
     pp_ins = calloc (2, mod->ins);
 
     /* Read pattern pointers */
-    fseek(f, start + (sfh.pp_pat << 4), SEEK_SET);
+    xmp_fseek(f, start + (sfh.pp_pat << 4), SEEK_SET);
     for (i = 0; i < mod->pat; i++)
 	pp_pat[i] = read16l(f);
 
     /* Read instrument pointers */
-    fseek(f, start + (sfh.pp_ins << 4), SEEK_SET);
+    xmp_fseek(f, start + (sfh.pp_ins << 4), SEEK_SET);
     for (i = 0; i < mod->ins; i++)
 	pp_ins[i] = read16l(f);
 
     /* Skip channel table (?) */
-    fseek(f, start + (sfh.pp_chn << 4) + 32, SEEK_SET);
+    xmp_fseek(f, start + (sfh.pp_chn << 4) + 32, SEEK_SET);
 
     /* Read orders */
     for (i = 0; i < mod->len; i++) {
 	mod->xxo[i] = read8(f);
-	fseek(f, 4, SEEK_CUR);
+	xmp_fseek(f, 4, SEEK_CUR);
     }
  
     INSTRUMENT_INIT();
@@ -213,10 +213,10 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
 
     for (i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
-	fseek(f, start + (pp_ins[i] << 4), SEEK_SET);
+	xmp_fseek(f, start + (pp_ins[i] << 4), SEEK_SET);
 
 	sih.type = read8(f);
-	fread(&sih.dosname, 13, 1, f);
+	xmp_fread(&sih.dosname, 13, 1, f);
 	sih.memseg = read16l(f);
 	sih.length = read32l(f);
 	sih.loopbeg = read32l(f);
@@ -227,12 +227,12 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
 	sih.flags = read8(f);
 	sih.c2spd = read16l(f);
 	sih.rsvd2 = read16l(f);
-	fread(&sih.rsvd3, 4, 1, f);
+	xmp_fread(&sih.rsvd3, 4, 1, f);
 	sih.int_gp = read16l(f);
 	sih.int_512 = read16l(f);
 	sih.int_last = read32l(f);
-	fread(&sih.name, 28, 1, f);
-	fread(&sih.magic, 4, 1, f);
+	xmp_fread(&sih.name, 28, 1, f);
+	xmp_fread(&sih.magic, 4, 1, f);
 
 	mod->xxi[i].nsm = !!(mod->xxs[i].len = sih.length);
 	mod->xxs[i].lps = sih.loopbeg;
@@ -268,9 +268,9 @@ static int stx_load(struct module_data *m, FILE *f, const int start)
 	if (!pp_pat[i])
 	    continue;
 
-	fseek(f, start + (pp_pat[i] << 4), SEEK_SET);
+	xmp_fseek(f, start + (pp_pat[i] << 4), SEEK_SET);
 	if (broken)
-	    fseek(f, 2, SEEK_CUR);
+	    xmp_fseek(f, 2, SEEK_CUR);
 
 	for (r = 0; r < 64; ) {
 	    b = read8(f);

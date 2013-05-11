@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <xmp.h>
+#include "xmp.h"
 #include "md5.h"
 
 #include "../src/common.h"
@@ -21,7 +21,7 @@
 	return 0; }
 
 #define fail_unless(x, y) do { \
-	if (!(x)) { printf("%d: %s: ", __LINE__, y); exit(1); } \
+	if (!(x)) { printf("%d: %s: ", __LINE__, y); abort(); } \
 } while (0)
 
 int map_channel(struct player_data *, int);

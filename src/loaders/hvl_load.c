@@ -23,13 +23,13 @@ const struct format_loader hvl_loader = {
 	hvl_load
 };
 
-static int hvl_test(FILE *f, char *t, const int start)
+static int hvl_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) != MAGIC_HVL)
 		return -1;
 
 	uint16 off = read16b(f);
-	if (fseek(f, off + 1, SEEK_SET))
+	if (xmp_fseek(f, off + 1, SEEK_SET))
 		return -1;
 
 	read_title(f, t, 32);
@@ -176,7 +176,7 @@ static void fix_effect (uint8 *fx, uint8 *param) {
 	}
 }
 
-static int hvl_load(struct module_data *m, FILE *f, const int start)
+static int hvl_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct player_data *p = &ctx->p;
 	struct xmp_module *mod = &m->mod;
@@ -217,7 +217,7 @@ static int hvl_load(struct module_data *m, FILE *f, const int start)
 
 	uint8 *seqbuf = malloc(mod->len * mod->chn * 2);
 	uint8 *seqptr = seqbuf;
-	fread (seqbuf, 1, mod->len * mod->chn * 2, f);
+	xmp_fread (seqbuf, 1, mod->len * mod->chn * 2, f);
 
 	uint8 **transbuf = malloc (mod->len * mod->chn * sizeof(uint8 *));
 	int transposed = 0;
@@ -319,7 +319,7 @@ static int hvl_load(struct module_data *m, FILE *f, const int start)
 		int Alen, Avol, Dlen, Dvol, Slen, Rlen, Rvol;
                 mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-		fread(buf, 22, 1, f);
+		xmp_fread(buf, 22, 1, f);
 
 		vol = buf[0];		/* Master volume (0 to 64) */
 		fspd = ((buf[1] >> 3) & 0x1f) | ((buf[12] >> 2) & 0x20);
@@ -367,7 +367,7 @@ static int hvl_load(struct module_data *m, FILE *f, const int start)
 
 		for (j = 0; j < plen; j++) {
 			uint8 tmp[5];
-			fread (tmp, 1, 5, f);
+			xmp_fread (tmp, 1, 5, f);
 
 			int fx1 = tmp[0] & 15;
 			int fx2 = (tmp[1] >> 3) & 15;
@@ -503,7 +503,7 @@ static int hvl_load(struct module_data *m, FILE *f, const int start)
 		fseek (f, title_offset, SEEK_SET);
 
 		nameptr = namebuf = malloc (len+1);
-		fread (namebuf, 1, len, f);
+		xmp_fread (namebuf, 1, len, f);
 		namebuf[len]=0;
 
 		copy_adjust ((uint8 *)mod->name, namebuf, 32);

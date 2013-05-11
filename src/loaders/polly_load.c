@@ -14,8 +14,8 @@
 
 #include "loader.h"
 
-static int polly_test(FILE *, char *, const int);
-static int polly_load(struct module_data *, FILE *, const int);
+static int polly_test(xmp_file, char *, const int);
+static int polly_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader polly_loader = {
 	"Polly Tracker",
@@ -29,14 +29,14 @@ const struct format_loader polly_loader = {
 #define SMP_OFS (NUM_PAT * PAT_SIZE + 256)
 
 
-static void decode_rle(uint8 *out, FILE *f, int size)
+static void decode_rle(uint8 *out, xmp_file f, int size)
 {
 	int i;
 
 	for (i = 0; i < size; ) {
 		int x = read8(f);
 
-		if (feof(f))
+		if (xmp_feof(f))
 			return;
 
 		if (x == 0xae) {
@@ -56,7 +56,7 @@ static void decode_rle(uint8 *out, FILE *f, int size)
 	}
 }
 
-static int polly_test(FILE *f, char *t, const int start)
+static int polly_test(xmp_file f, char *t, const int start)
 {
 	int i;
 	uint8 *buf;
@@ -93,7 +93,7 @@ static int polly_test(FILE *f, char *t, const int start)
 	return 0;
 }
 
-static int polly_load(struct module_data *m, FILE *f, const int start)
+static int polly_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;

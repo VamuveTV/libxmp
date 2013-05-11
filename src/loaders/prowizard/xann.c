@@ -12,7 +12,7 @@
 #define PAT_DATA_ADDRESS 0x43C
 
 
-static int depack_xann(FILE *in, FILE *out)
+static int depack_xann(xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c5;
 	uint8 ptable[128];
@@ -30,7 +30,7 @@ static int depack_xann(FILE *in, FILE *out)
 	pw_write_zero(out, 20);			/* title */
 
 	/* 31 samples */
-	fseek(in, SMP_DESC_ADDRESS, SEEK_SET);
+	xmp_fseek(in, SMP_DESC_ADDRESS, SEEK_SET);
 
 	for (i = 0; i < 31; i++) {
 		pw_write_zero(out, 22);		/* sample name */
@@ -53,7 +53,7 @@ static int depack_xann(FILE *in, FILE *out)
 	}
 
 	/* pattern table */
-	fseek(in, 0, SEEK_SET);
+	xmp_fseek(in, 0, SEEK_SET);
 
 	for (pat = c5 = 0; c5 < 128; c5++) {
 		l = read32b(in);
@@ -68,11 +68,11 @@ static int depack_xann(FILE *in, FILE *out)
 	write8(out, c5);		/* write number of pattern */
 	write8(out, 0x7f);		/* write noisetracker byte */
 
-	fwrite(ptable, 128, 1, out);	/* write pattern list */
+	xmp_fwrite(ptable, 128, 1, out);	/* write pattern list */
 	write32b(out, PW_MOD_MAGIC);	/* write Protracker's ID */
 
 	/* pattern data */
-	fseek(in, PAT_DATA_ADDRESS, SEEK_SET);
+	xmp_fseek(in, PAT_DATA_ADDRESS, SEEK_SET);
 
 	for (i = 0; i < pat; i++) {
 		for (j = 0; j < 256; j++) {
@@ -187,7 +187,7 @@ static int depack_xann(FILE *in, FILE *out)
 			pdata[j * 4 + 3] = fxp;
 		}
 
-		fwrite(pdata, 1024, 1, out);
+		xmp_fwrite(pdata, 1024, 1, out);
 	}
 
 	/* sample data */

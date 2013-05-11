@@ -24,7 +24,7 @@ struct smp {
 	uint8 vol;
 };
 
-static int depack_p4x (FILE *in, FILE *out)
+static int depack_p4x (xmp_file in, xmp_file out)
 {
 	uint8 c1, c2, c3, c4, c5;
 	uint8 tmp[1024];
@@ -99,12 +99,12 @@ static int depack_p4x (FILE *in, FILE *out)
 	memset(tmp, 0, 30);
 	tmp[29] = 0x01;
 	for (; i < 31; i++)
-		fwrite (tmp, 30, 1, out);
+		xmp_fwrite (tmp, 30, 1, out);
 
 	write8(out, len);		/* write size of pattern list */
 	write8(out, 0x7f);		/* write noisetracker byte */
 
-	fseek(in, trktab_ofs + 4, SEEK_SET);
+	xmp_fseek(in, trktab_ofs + 4, SEEK_SET);
 
 	for (c1 = 0; c1 < len; c1++)	/* write pattern list */
 		write8(out, c1);
@@ -118,13 +118,13 @@ static int depack_p4x (FILE *in, FILE *out)
 			track_addr[i][j] = read16b(in) + trkdat_ofs + 4;
 	}
 
-	fseek(in, trkdat_ofs + 4, SEEK_SET);
+	xmp_fseek(in, trkdat_ofs + 4, SEEK_SET);
 
 	for (i = 0; i < len; i++) {	/* rewrite the track data */
 		for (j = 0; j < 4; j++) {
 			int y, x = i * 4 + j;
 
-			fseek(in, track_addr[i][j], SEEK_SET);
+			xmp_fseek(in, track_addr[i][j], SEEK_SET);
 
 			for (k = 0; k < 64; k++) {
 				c1 = read8(in);
@@ -178,12 +178,12 @@ static int depack_p4x (FILE *in, FILE *out)
 					continue;
 				}
 
-				a = ftell (in);
+				a = xmp_ftell (in);
 
 				c5 = c2;
 				b = (c3 << 8) + c4 + trkdat_ofs + 4;
 
-				fseek(in, b, SEEK_SET);
+				xmp_fseek(in, b, SEEK_SET);
 
 				for (c = 0; c <= c5; c++) {
 					c1 = read8(in);
@@ -235,7 +235,7 @@ static int depack_p4x (FILE *in, FILE *out)
 					k++;
 				}
 				k--;
-				fseek(in, a, SEEK_SET);
+				xmp_fseek(in, a, SEEK_SET);
 			}
 		}
 	}
@@ -254,12 +254,12 @@ static int depack_p4x (FILE *in, FILE *out)
 				tmp[x + 3] = tr[y][j * 4 + 3];
 			}
 		}
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* read and write sample data */
 	for (i = 0; i < nsmp; i++) {
-		fseek(in, SampleAddress[i] + smp_ofs, SEEK_SET);
+		xmp_fseek(in, SampleAddress[i] + smp_ofs, SEEK_SET);
 		pw_move_data(out, in, SampleSize[i]);
 	}
 

@@ -13,8 +13,8 @@
 #include "loader.h"
 #include "period.h"
 
-static int asylum_test(FILE *, char *, const int);
-static int asylum_load(struct module_data *, FILE *, const int);
+static int asylum_test(xmp_file, char *, const int);
+static int asylum_load(struct module_data *, xmp_file, const int);
 
 const struct format_loader asylum_loader = {
 	"Asylum Music Format (AMF)",
@@ -22,11 +22,11 @@ const struct format_loader asylum_loader = {
 	asylum_load
 };
 
-static int asylum_test(FILE *f, char *t, const int start)
+static int asylum_test(xmp_file f, char *t, const int start)
 {
 	char buf[32];
 
-	if (fread(buf, 1, 32, f) < 32)
+	if (xmp_fread(buf, 1, 32, f) < 32)
 		return -1;
 
 	if (memcmp(buf, "ASYLUM Music Format V1.0\0\0\0\0\0\0\0\0", 32))
@@ -37,7 +37,7 @@ static int asylum_test(FILE *f, char *t, const int start)
 	return 0;
 }
 
-static int asylum_load(struct module_data *m, FILE *f, const int start)
+static int asylum_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -45,7 +45,7 @@ static int asylum_load(struct module_data *m, FILE *f, const int start)
 
 	LOAD_INIT();
 
-	fseek(f, 32, SEEK_CUR);			/* skip magic */
+	xmp_fseek(f, 32, SEEK_CUR);			/* skip magic */
 	mod->spd = read8(f);			/* initial speed */
 	mod->bpm = read8(f);			/* initial BPM */
 	mod->ins = read8(f);			/* number of instruments */
@@ -53,8 +53,8 @@ static int asylum_load(struct module_data *m, FILE *f, const int start)
 	mod->len = read8(f);			/* module length */
 	read8(f);
 
-	fread(mod->xxo, 1, mod->len, f);	/* read orders */
-	fseek(f, start + 294, SEEK_SET);
+	xmp_fread(mod->xxo, 1, mod->len, f);	/* read orders */
+	xmp_fseek(f, start + 294, SEEK_SET);
 
 	mod->chn = 8;
 	mod->smp = mod->ins;
@@ -72,7 +72,7 @@ static int asylum_load(struct module_data *m, FILE *f, const int start)
 
 		mod->xxi[i].sub = calloc(sizeof(struct xmp_subinstrument), 1);
 
-		fread(insbuf, 1, 37, f);
+		xmp_fread(insbuf, 1, 37, f);
 		copy_adjust(mod->xxi[i].name, insbuf, 22);
 		mod->xxi[i].sub[0].fin = (int8)(insbuf[22] << 4);
 		mod->xxi[i].sub[0].vol = insbuf[23];
@@ -94,7 +94,7 @@ static int asylum_load(struct module_data *m, FILE *f, const int start)
 		   mod->xxi[i].sub[0].vol, mod->xxi[i].sub[0].fin);
 	}
 
-	fseek(f, 37 * (64 - mod->ins), SEEK_CUR);
+	xmp_fseek(f, 37 * (64 - mod->ins), SEEK_CUR);
 
 	D_(D_INFO "Module length: %d", mod->len);
 

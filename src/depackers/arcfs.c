@@ -33,12 +33,12 @@ struct archived_file_header_tag {
 };
 
 
-static int read_file_header(FILE *in, struct archived_file_header_tag *hdrp)
+static int read_file_header(xmp_file in, struct archived_file_header_tag *hdrp)
 {
 	int hlen, start, ver;
 	int i;
 
-	fseek(in, 8, SEEK_CUR);			/* skip magic */
+	xmp_fseek(in, 8, SEEK_CUR);			/* skip magic */
 	hlen = read32l(in) / 36;
 	start = read32l(in);
 	ver = read32l(in);
@@ -49,7 +49,7 @@ static int read_file_header(FILE *in, struct archived_file_header_tag *hdrp)
 	ver = read32l(in);
 	//report("%d... ", ver);
 
-	fseek(in, 68, SEEK_CUR);		/* reserved */
+	xmp_fseek(in, 68, SEEK_CUR);		/* reserved */
 
 	for (i = 0; i < hlen; i++) {
 		int x = read8(in);
@@ -58,7 +58,7 @@ static int read_file_header(FILE *in, struct archived_file_header_tag *hdrp)
 			break;
 
 		hdrp->method = x & 0x7f;
-		fread(hdrp->name, 1, 11, in);
+		xmp_fread(hdrp->name, 1, 11, in);
 		hdrp->name[12] = 0;
 		hdrp->orig_size = read32l(in);
 		read32l(in);
@@ -107,7 +107,7 @@ static int read_file_header(FILE *in, struct archived_file_header_tag *hdrp)
  * the memory allocated.
  * Returns NULL for file I/O error only; OOM is fatal (doesn't return).
  */
-static unsigned char *read_file_data(FILE *in,
+static unsigned char *read_file_data(xmp_file in,
 				     struct archived_file_header_tag *hdrp)
 {
 	unsigned char *data;
@@ -116,8 +116,8 @@ static unsigned char *read_file_data(FILE *in,
 	if ((data = malloc(siz)) == NULL)
 		return NULL;
 
-	fseek(in, hdrp->offset, SEEK_SET);
-	if (fread(data, 1, siz, in) != siz) {
+	xmp_fseek(in, hdrp->offset, SEEK_SET);
+	if (xmp_fread(data, 1, siz, in) != siz) {
 		free(data);
 		data = NULL;
 	}
@@ -125,7 +125,7 @@ static unsigned char *read_file_data(FILE *in,
 	return data;
 }
 
-static int arcfs_extract(FILE *in, FILE *out)
+static int arcfs_extract(xmp_file in, xmp_file out)
 {
 	struct archived_file_header_tag hdr;
 	/* int done = 0; */
@@ -230,7 +230,7 @@ fclose(out);
 		while ((ptr = strchr(hdr.name, '/')) != NULL)
 			*ptr = '_';
 
-		if (fwrite(orig_data, 1, hdr.orig_size, out) != hdr.orig_size) {
+		if (xmp_fwrite(orig_data, 1, hdr.orig_size, out) != hdr.orig_size) {
 			fprintf(stderr, "error, %s\n", strerror(errno));
 			exitval = 1;
 		}
@@ -244,7 +244,7 @@ fclose(out);
 	return exitval;
 }
 
-int decrunch_arcfs(FILE * f, FILE * fo)
+int decrunch_arcfs(xmp_file f, xmp_file fo)
 {
 	int ret;
 

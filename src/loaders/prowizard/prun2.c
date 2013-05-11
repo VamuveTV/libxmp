@@ -10,7 +10,7 @@
 #include "prowiz.h"
 
 
-static int depack_pru2(FILE *in, FILE *out)
+static int depack_pru2(xmp_file in, xmp_file out)
 {
 	uint8 header[2048];
 	uint8 c1, c2, c3, c4;
@@ -26,7 +26,7 @@ static int depack_pru2(FILE *in, FILE *out)
 
 	pw_write_zero(out, 20);				/* title */
 
-	fseek(in, 8, SEEK_SET);
+	xmp_fseek(in, 8, SEEK_SET);
 
 	for (i = 0; i < 31; i++) {
 		pw_write_zero(out, 22);			/*sample name */
@@ -49,7 +49,7 @@ static int depack_pru2(FILE *in, FILE *out)
 	write32b(out, PW_MOD_MAGIC);
 
 	/* pattern data stuff */
-	fseek(in, 770, SEEK_SET);
+	xmp_fseek(in, 770, SEEK_SET);
 
 	for (i = 0; i <= max; i++) {
 		for (j = 0; j < 256; j++) {
@@ -58,7 +58,7 @@ static int depack_pru2(FILE *in, FILE *out)
 			if (header[0] == 0x80) {
 				write32b(out, 0);
 			} else if (header[0] == 0xC0) {
-				fwrite(v[0], 4, 1, out);
+				xmp_fwrite(v[0], 4, 1, out);
 				c1 = v[0][0];
 				c2 = v[0][1];
 				c3 = v[0][2];

@@ -12,7 +12,7 @@
 #define ON  1
 #define OFF 2
 
-static int depack_ksm (FILE *in, FILE *out)
+static int depack_ksm (xmp_file in, xmp_file out)
 {
 	uint8 tmp[1024];
 	uint8 c1, c5;
@@ -31,16 +31,16 @@ static int depack_ksm (FILE *in, FILE *out)
 	memset(real_tnum, 0, 128 * 4);
 
 	/* title */
-	fseek(in, 2, SEEK_SET);
+	xmp_fseek(in, 2, SEEK_SET);
 	pw_move_data(out, in, 13);
 	pw_write_zero(out, 7);
 
 	/* read and write whole header */
 	/*printf ( "Converting sample headers ... " ); */
-	fseek(in, 32, SEEK_SET);
+	xmp_fseek(in, 32, SEEK_SET);
 	for (i = 0; i < 15; i++) {
 		pw_write_zero(out, 22);		/* write name */
-		fseek(in, 20, SEEK_CUR);	/* 16 unknown/4 addr bytes */
+		xmp_fseek(in, 20, SEEK_CUR);	/* 16 unknown/4 addr bytes */
 		write16b(out, (k = read16b(in)) / 2); /* size */
 		ssize += k;
 		write8(out, 0);			/* finetune */
@@ -49,21 +49,21 @@ static int depack_ksm (FILE *in, FILE *out)
 		write16b(out, (j = read16b(in)) / 2);	/* loop start */
 		j = k - j;
 		write16b(out, j != k ? j / 2 : 1);	/* loop size */
-		fseek(in, 6, SEEK_CUR);		/* bypass 6 unknown bytes */
+		xmp_fseek(in, 6, SEEK_CUR);		/* bypass 6 unknown bytes */
 	}
 
 	memset(tmp, 0, 30);
 	tmp[29] = 0x01;
 	for (i = 0; i < 16; i++)
-		fwrite(tmp, 30, 1, out);
+		xmp_fwrite(tmp, 30, 1, out);
 
 	/* pattern list */
-	fseek (in, 512, 0);
+	xmp_fseek (in, 512, 0);
 	for (Max = PatPos = 0; PatPos < 128; PatPos++) {
-		fread(&trknum[PatPos][0], 1, 1, in);
-		fread(&trknum[PatPos][1], 1, 1, in);
-		fread(&trknum[PatPos][2], 1, 1, in);
-		fread(&trknum[PatPos][3], 1, 1, in);
+		xmp_fread(&trknum[PatPos][0], 1, 1, in);
+		xmp_fread(&trknum[PatPos][1], 1, 1, in);
+		xmp_fread(&trknum[PatPos][2], 1, 1, in);
+		xmp_fread(&trknum[PatPos][3], 1, 1, in);
 		if (trknum[PatPos][0] == 0xFF)
 			break;
 		if (trknum[PatPos][0] > Max)
@@ -137,21 +137,21 @@ static int depack_ksm (FILE *in, FILE *out)
 		Status = ON;
 	}
 
-	fwrite(plist, 128, 1, out);	/* write pattern list */
+	xmp_fwrite(plist, 128, 1, out);	/* write pattern list */
 	write32b(out, PW_MOD_MAGIC);	/* write ID */
 
 	/* pattern data */
 	for (i = 0; i < c5; i++) {
 		memset(tmp, 0, 1024);
 		memset(tdata, 0, 192 * 4);
-		fseek(in, 1536 + 192 * real_tnum[i][0], SEEK_SET);
-		fread(tdata[0], 192, 1, in);
-		fseek(in, 1536 + 192 * real_tnum[i][1], SEEK_SET);
-		fread(tdata[1], 192, 1, in);
-		fseek(in, 1536 + 192 * real_tnum[i][2], SEEK_SET);
-		fread(tdata[2], 192, 1, in);
-		fseek(in, 1536 + 192 * real_tnum[i][3], SEEK_SET);
-		fread(tdata[3], 192, 1, in);
+		xmp_fseek(in, 1536 + 192 * real_tnum[i][0], SEEK_SET);
+		xmp_fread(tdata[0], 192, 1, in);
+		xmp_fseek(in, 1536 + 192 * real_tnum[i][1], SEEK_SET);
+		xmp_fread(tdata[1], 192, 1, in);
+		xmp_fseek(in, 1536 + 192 * real_tnum[i][2], SEEK_SET);
+		xmp_fread(tdata[2], 192, 1, in);
+		xmp_fseek(in, 1536 + 192 * real_tnum[i][3], SEEK_SET);
+		xmp_fread(tdata[3], 192, 1, in);
 
 		for (j = 0; j < 64; j++) {
 			int x = j * 16;
@@ -185,11 +185,11 @@ static int depack_ksm (FILE *in, FILE *out)
 			tmp[x + 15] = tdata[3][j * 3 + 2];
 		}
 
-		fwrite(tmp, 1024, 1, out);
+		xmp_fwrite(tmp, 1024, 1, out);
 	}
 
 	/* sample data */
-	fseek(in, 1536 + (192 * (Max + 1)), SEEK_SET);
+	xmp_fseek(in, 1536 + (192 * (Max + 1)), SEEK_SET);
 	pw_move_data(out, in, ssize);
 
 	return 0;

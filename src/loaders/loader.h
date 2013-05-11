@@ -27,14 +27,14 @@
 
 char *copy_adjust(char *, uint8 *, int);
 int test_name(uint8 *, int);
-void read_title(FILE *, char *, int);
+void read_title(xmp_file, char *, int);
 void set_xxh_defaults(struct xmp_module *);
 void cvt_pt_event(struct xmp_event *, uint8 *);
 void disable_continue_fx(struct xmp_event *);
 int check_filename_case(char *, char *, char *, int);
 void get_instrument_path(struct module_data *, char *, int);
 void set_type(struct module_data *, char *, ...);
-int load_sample(struct module_data *, FILE *, int, struct xmp_sample *, void *);
+int load_sample(struct module_data *, xmp_file, int, struct xmp_sample *, void *);
 void free_sample(struct xmp_sample *);
 
 extern uint8 ord_xlat[];
@@ -49,7 +49,7 @@ static inline int is_big_endian() {
     (((uint32)(a)<<24)|((uint32)(b)<<16)|((uint32)(c)<<8)|(d))
 
 #define LOAD_INIT() do { \
-    fseek(f, start, SEEK_SET); \
+    xmp_fseek(f, start, SEEK_SET); \
 } while (0)
 
 #define MODULE_INFO() do { \

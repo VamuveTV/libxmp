@@ -2,19 +2,19 @@
 
 TEST(test_write_file_16bit_big_endian)
 {
-	FILE *f;
+	xmp_file f;
 	int x;
 
-	f = fopen("write_test", "wb");
+	f = xmp_fopen("write_test", "wb");
 	fail_unless(f != NULL, "can't open data file");
 
 	write16b(f, 0x1234);
-	fclose(f);
+	xmp_fclose(f);
 
-	f = fopen("write_test", "rb");
+	f = xmp_fopen("write_test", "rb");
 	x = read16b(f);
 	fail_unless(x == 0x1234, "read error");
 
-	fclose(f);
+	xmp_fclose(f);
 }
 END_TEST

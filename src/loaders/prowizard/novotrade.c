@@ -8,7 +8,7 @@
 #include "prowiz.h"
 
 
-static int depack_ntp(FILE *in, FILE *out)
+static int depack_ntp(xmp_file in, xmp_file out)
 {
 	uint8 buf[1024];
 	int i, j;
@@ -34,7 +34,7 @@ static int depack_ntp(FILE *in, FILE *out)
 		int x = read8(in);		/* instrument number */
 
 		if (x > 30) {
-			fseek(in, 7, SEEK_CUR);
+			xmp_fseek(in, 7, SEEK_CUR);
 			continue;
 		}
 
@@ -53,7 +53,7 @@ static int depack_ntp(FILE *in, FILE *out)
 		buf[x + 28] = read8(in);	/* loop size */
 		buf[x + 29] = read8(in);
 	}
-	fwrite(buf, 930, 1, out);
+	xmp_fwrite(buf, 930, 1, out);
 
 	write8(out, len);
 	write8(out, 0x7f);
@@ -62,7 +62,7 @@ static int depack_ntp(FILE *in, FILE *out)
 	memset(buf, 0, 128);
 	for (i = 0; i < len; i++)
 		buf[i] = read16b(in);
-	fwrite(buf, 128, 1, out);
+	xmp_fwrite(buf, 128, 1, out);
 
 	/* pattern addresses now */
 	/* Where is on it */
@@ -74,26 +74,26 @@ static int depack_ntp(FILE *in, FILE *out)
 
 	/* pattern data now ... *gee* */
 	for (i = 0; i < npat; i++) {
-		fseek(in, body_addr + 4 + pat_addr[i], SEEK_SET);
+		xmp_fseek(in, body_addr + 4 + pat_addr[i], SEEK_SET);
 		memset(buf, 0, 1024);
 
 		for (j = 0; j < 64; j++) {
 			int x = read16b(in);
 
 			if (x & 0x0001)
-				fread(buf + j * 16, 1, 4, in);
+				xmp_fread(buf + j * 16, 1, 4, in);
 			if (x & 0x0002)
-				fread(buf + j * 16 + 4, 1, 4, in);
+				xmp_fread(buf + j * 16 + 4, 1, 4, in);
 			if (x & 0x0004)
-				fread(buf + j * 16 + 8, 1, 4, in);
+				xmp_fread(buf + j * 16 + 8, 1, 4, in);
 			if (x & 0x0008)
-				fread(buf + j * 16 + 12, 1, 4, in);
+				xmp_fread(buf + j * 16 + 12, 1, 4, in);
 		}
-		fwrite(buf, 1024, 1, out);
+		xmp_fwrite(buf, 1024, 1, out);
 	}
 
 	/* samples */
-	fseek(in, smp_addr, SEEK_SET);
+	xmp_fseek(in, smp_addr, SEEK_SET);
 	pw_move_data(out, in, ssize);
 	
 	return 0;

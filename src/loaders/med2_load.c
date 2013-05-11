@@ -22,8 +22,8 @@
 
 #define MAGIC_MED2	MAGIC4('M','E','D',2)
 
-static int med2_test(FILE *, char *, const int);
-static int med2_load (struct module_data *, FILE *, const int);
+static int med2_test(xmp_file, char *, const int);
+static int med2_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader med2_loader = {
 	"MED 1.12 MED2 (MED)",
@@ -32,7 +32,7 @@ const struct format_loader med2_loader = {
 };
 
 
-static int med2_test(FILE *f, char *t, const int start)
+static int med2_test(xmp_file f, char *t, const int start)
 {
 	if (read32b(f) !=  MAGIC_MED2)
 		return -1;
@@ -43,7 +43,7 @@ static int med2_test(FILE *f, char *t, const int start)
 }
 
 
-int med2_load(struct module_data *m, FILE *f, const int start)
+int med2_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	int i, j, k;
@@ -62,9 +62,9 @@ int med2_load(struct module_data *m, FILE *f, const int start)
 	INSTRUMENT_INIT();
 
 	/* read instrument names */
-	fread(buf, 1, 40, f);	/* skip 0 */
+	xmp_fread(buf, 1, 40, f);	/* skip 0 */
 	for (i = 0; i < 31; i++) {
-		fread(buf, 1, 40, f);
+		xmp_fread(buf, 1, 40, f);
 		copy_adjust(mod->xxi[i].name, buf, 32);
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 	}
@@ -96,7 +96,7 @@ int med2_load(struct module_data *m, FILE *f, const int start)
 	mod->pat = read16b(f);
 	mod->trk = mod->chn * mod->pat;
 
-	fread(mod->xxo, 1, 100, f);
+	xmp_fread(mod->xxo, 1, 100, f);
 	mod->len = read16b(f);
 
 	mod->spd = 192 / read16b(f);
@@ -104,7 +104,7 @@ int med2_load(struct module_data *m, FILE *f, const int start)
 	read16b(f);			/* flags */
 	sliding = read16b(f);		/* sliding */
 	read32b(f);			/* jumping mask */
-	fseek(f, 16, SEEK_CUR);		/* rgb */
+	xmp_fseek(f, 16, SEEK_CUR);		/* rgb */
 
 	MODULE_INFO();
 
@@ -163,8 +163,7 @@ int med2_load(struct module_data *m, FILE *f, const int start)
 		char path[PATH_MAX];
 		char ins_path[256];
 		char name[256];
-		FILE *s = NULL;
-		struct stat stat;
+		xmp_file s = NULL;
 		int found;
 
 		get_instrument_path(m, ins_path, 256);
@@ -173,9 +172,8 @@ int med2_load(struct module_data *m, FILE *f, const int start)
 
 		if (found) {
 			snprintf(path, PATH_MAX, "%s/%s", ins_path, name);
-			if ((s = fopen(path, "rb"))) {
-				fstat(fileno(s), &stat);
-				mod->xxs[i].len = stat.st_size;
+			if ((s = xmp_fopen(path, "rb"))) {
+				mod->xxs[i].len = xmp_fsize(s);
 			}
 		}
 
@@ -192,7 +190,7 @@ int med2_load(struct module_data *m, FILE *f, const int start)
 
 		if (found) {
 			load_sample(m, s, 0, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
-			fclose(s);
+			xmp_fclose(s);
 		}
 	}
 

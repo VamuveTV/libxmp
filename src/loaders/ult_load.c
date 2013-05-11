@@ -19,8 +19,8 @@
 #include "loader.h"
 
 
-static int ult_test (FILE *, char *, const int);
-static int ult_load (struct module_data *, FILE *, const int);
+static int ult_test (xmp_file, char *, const int);
+static int ult_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader ult_loader = {
     "Ultra Tracker (ULT)",
@@ -28,11 +28,11 @@ const struct format_loader ult_loader = {
     ult_load
 };
 
-static int ult_test(FILE *f, char *t, const int start)
+static int ult_test(xmp_file f, char *t, const int start)
 {
     char buf[15];
 
-    if (fread(buf, 1, 15, f) < 15)
+    if (xmp_fread(buf, 1, 15, f) < 15)
 	return -1;
 
     if (memcmp(buf, "MAS_UTrack_V000", 14))
@@ -83,7 +83,7 @@ struct ult_event {
 };
 
 
-static int ult_load(struct module_data *m, FILE *f, const int start)
+static int ult_load(struct module_data *m, xmp_file f, const int start)
 {
     struct xmp_module *mod = &m->mod;
     int i, j, k, ver, cnt;
@@ -99,8 +99,8 @@ static int ult_load(struct module_data *m, FILE *f, const int start)
 
     LOAD_INIT();
 
-    fread(&ufh.magic, 15, 1, f);
-    fread(&ufh.name, 32, 1, f);
+    xmp_fread(&ufh.magic, 15, 1, f);
+    xmp_fread(&ufh.name, 32, 1, f);
     ufh.msgsize = read8(f);
 
     ver = ufh.magic[14] - '0';
@@ -111,7 +111,7 @@ static int ult_load(struct module_data *m, FILE *f, const int start)
 
     MODULE_INFO();
 
-    fseek(f, ufh.msgsize * 32, SEEK_CUR);
+    xmp_fseek(f, ufh.msgsize * 32, SEEK_CUR);
 
     mod->ins = mod->smp = read8(f);
     /* mod->flg |= XXM_FLG_LINEAR; */
@@ -125,8 +125,8 @@ static int ult_load(struct module_data *m, FILE *f, const int start)
     for (i = 0; i < mod->ins; i++) {
 	mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-	fread(&uih.name, 32, 1, f);
-	fread(&uih.dosname, 12, 1, f);
+	xmp_fread(&uih.name, 32, 1, f);
+	xmp_fread(&uih.dosname, 12, 1, f);
 	uih.loop_start = read32l(f);
 	uih.loopend = read32l(f);
 	uih.sizestart = read32l(f);
@@ -201,7 +201,7 @@ static int ult_load(struct module_data *m, FILE *f, const int start)
 	    c2spd_to_note(uih.c2spd, &mod->xxi[i].sub[0].xpo, &mod->xxi[i].sub[0].fin);
     }
 
-    fread(&ufh2.order, 256, 1, f);
+    xmp_fread(&ufh2.order, 256, 1, f);
     ufh2.channels = read8(f);
     ufh2.patterns = read8(f);
 
@@ -247,7 +247,7 @@ static int ult_load(struct module_data *m, FILE *f, const int start)
 		cnt = read8(f);			/* Read repeat count */
 		x8 = read8(f);			/* Read note */
 	    }
-	    fread(&ue, 4, 1, f);		/* Read rest of the event */
+	    xmp_fread(&ue, 4, 1, f);		/* Read rest of the event */
 
 	    if (cnt == 0)
 		cnt++;

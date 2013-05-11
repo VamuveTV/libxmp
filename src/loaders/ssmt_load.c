@@ -25,8 +25,8 @@
 #include "asif.h"
 
 
-static int mtp_test (FILE *, char *, const int);
-static int mtp_load (struct module_data *, FILE *, const int);
+static int mtp_test (xmp_file, char *, const int);
+static int mtp_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader mtp_loader = {
 	"Soundsmith/MegaTracker (MTP)",
@@ -34,11 +34,11 @@ const struct format_loader mtp_loader = {
 	mtp_load
 };
 
-static int mtp_test(FILE *f, char *t, const int start)
+static int mtp_test(xmp_file f, char *t, const int start)
 {
 	char buf[6];
 
-	if (fread(buf, 1, 6, f) < 6)
+	if (xmp_fread(buf, 1, 6, f) < 6)
 		return -1;
 
 	if (memcmp(buf, "SONGOK", 6) && memcmp(buf, "IAN92a", 6))
@@ -55,18 +55,18 @@ static int mtp_test(FILE *f, char *t, const int start)
 #define NAME_SIZE 255
 
 
-static int mtp_load(struct module_data *m, FILE *f, const int start)
+static int mtp_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
 	int i, j, k;
 	uint8 buffer[25];
 	int blocksize;
-	FILE *s;
+	xmp_file s;
 
 	LOAD_INIT();
 
-	fread(buffer, 6, 1, f);
+	xmp_fread(buffer, 6, 1, f);
 
 	if (!memcmp(buffer, "SONGOK", 6))
 		set_type(m, "IIgs SoundSmith");
@@ -77,7 +77,7 @@ static int mtp_load(struct module_data *m, FILE *f, const int start)
 
 	blocksize = read16l(f);
 	mod->spd = read16l(f);
-	fseek(f, 10, SEEK_CUR);		/* skip 10 reserved bytes */
+	xmp_fseek(f, 10, SEEK_CUR);		/* skip 10 reserved bytes */
 	
 	mod->ins = mod->smp = 15;
 	INSTRUMENT_INIT();
@@ -85,7 +85,7 @@ static int mtp_load(struct module_data *m, FILE *f, const int start)
 	for (i = 0; i < mod->ins; i++) {
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-		fread(buffer, 1, 22, f);
+		xmp_fread(buffer, 1, 22, f);
 		if (buffer[0]) {
 			buffer[buffer[0] + 1] = 0;
 			copy_adjust(mod->xxi[i].name, buffer + 1, 22);
@@ -93,16 +93,16 @@ static int mtp_load(struct module_data *m, FILE *f, const int start)
 		read16l(f);		/* skip 2 reserved bytes */
 		mod->xxi[i].sub[0].vol = read8(f) >> 2;
 		mod->xxi[i].sub[0].pan = 0x80;
-		fseek(f, 5, SEEK_CUR);	/* skip 5 bytes */
+		xmp_fseek(f, 5, SEEK_CUR);	/* skip 5 bytes */
 	}
 
 	mod->len = read8(f) & 0x7f;
 	read8(f);
-	fread(mod->xxo, 1, 128, f);
+	xmp_fread(mod->xxo, 1, 128, f);
 
 	MODULE_INFO();
 
-	fseek(f, start + 600, SEEK_SET);
+	xmp_fseek(f, start + 600, SEEK_SET);
 
 	mod->chn = 14;
 	mod->pat = blocksize / (14 * 64);
@@ -190,9 +190,9 @@ static int mtp_load(struct module_data *m, FILE *f, const int start)
 			strncat(filename, "/", NAME_SIZE);
 		strncat(filename, (char *)mod->xxi[i].name, NAME_SIZE);
 
-		if ((s = fopen(filename, "rb")) != NULL) {
+		if ((s = xmp_fopen(filename, "rb")) != NULL) {
 			asif_load(m, s, i);
-			fclose(s);
+			xmp_fclose(s);
 		}
 
 #if 0

@@ -13,8 +13,8 @@
 #define MAGIC_MCS	MAGIC4(0xbd,'M','C','S')
 
 
-static int mgt_test (FILE *, char *, const int);
-static int mgt_load (struct module_data *, FILE *, const int);
+static int mgt_test (xmp_file, char *, const int);
+static int mgt_load (struct module_data *, xmp_file, const int);
 
 const struct format_loader mgt_loader = {
 	"Megatracker (MGT)",
@@ -22,7 +22,7 @@ const struct format_loader mgt_loader = {
 	mgt_load
 };
 
-static int mgt_test(FILE *f, char *t, const int start)
+static int mgt_test(xmp_file f, char *t, const int start)
 {
 	int sng_ptr;
 
@@ -32,16 +32,16 @@ static int mgt_test(FILE *f, char *t, const int start)
 	if (read32b(f) != MAGIC_MCS)
 		return -1;
 
-	fseek(f, 18, SEEK_CUR);
+	xmp_fseek(f, 18, SEEK_CUR);
 	sng_ptr = read32b(f);
-	fseek(f, start + sng_ptr, SEEK_SET);
+	xmp_fseek(f, start + sng_ptr, SEEK_SET);
 
 	read_title(f, t, 32);
 	
 	return 0;
 }
 
-static int mgt_load(struct module_data *m, FILE *f, const int start)
+static int mgt_load(struct module_data *m, xmp_file f, const int start)
 {
 	struct xmp_module *mod = &m->mod;
 	struct xmp_event *event;
@@ -76,9 +76,9 @@ static int mgt_load(struct module_data *m, FILE *f, const int start)
 	read32b(f);			/* total smp len */
 	read32b(f);			/* unpacked trk size */
 
-	fseek(f, start + sng_ptr, SEEK_SET);
+	xmp_fseek(f, start + sng_ptr, SEEK_SET);
 
-	fread(mod->name, 1, 32, f);
+	xmp_fread(mod->name, 1, 32, f);
 	seq_ptr = read32b(f);
 	mod->len = read16b(f);
 	mod->rst = read16b(f);
@@ -96,7 +96,7 @@ static int mgt_load(struct module_data *m, FILE *f, const int start)
 
 	/* Sequence */
 
-	fseek(f, start + seq_ptr, SEEK_SET);
+	xmp_fseek(f, start + seq_ptr, SEEK_SET);
 	for (i = 0; i < mod->len; i++)
 		mod->xxo[i] = read16b(f);
 
@@ -104,14 +104,14 @@ static int mgt_load(struct module_data *m, FILE *f, const int start)
 
 	INSTRUMENT_INIT();
 
-	fseek(f, start + ins_ptr, SEEK_SET);
+	xmp_fseek(f, start + ins_ptr, SEEK_SET);
 
 	for (i = 0; i < mod->ins; i++) {
 		int c2spd, flags;
 
 		mod->xxi[i].sub = calloc(sizeof (struct xmp_subinstrument), 1);
 
-		fread(mod->xxi[i].name, 1, 32, f);
+		xmp_fread(mod->xxi[i].name, 1, 32, f);
 		sdata[i] = read32b(f);
 		mod->xxs[i].len = read32b(f);
 		mod->xxs[i].lps = read32b(f);
@@ -158,9 +158,9 @@ static int mgt_load(struct module_data *m, FILE *f, const int start)
 		int offset, rows;
 		uint8 b;
 
-		fseek(f, start + trk_ptr + i * 4, SEEK_SET);
+		xmp_fseek(f, start + trk_ptr + i * 4, SEEK_SET);
 		offset = read32b(f);
-		fseek(f, start + offset, SEEK_SET);
+		xmp_fseek(f, start + offset, SEEK_SET);
 
 		rows = read16b(f);
 		mod->xxt[i] = calloc(sizeof(struct xmp_track) +
@@ -280,7 +280,7 @@ static int mgt_load(struct module_data *m, FILE *f, const int start)
 	/* Read and convert patterns */
 	D_(D_INFO "Stored patterns: %d", mod->pat);
 
-	fseek(f, start + pat_ptr, SEEK_SET);
+	xmp_fseek(f, start + pat_ptr, SEEK_SET);
 
 	for (i = 0; i < mod->pat; i++) {
 		PATTERN_ALLOC(i);
@@ -299,7 +299,7 @@ static int mgt_load(struct module_data *m, FILE *f, const int start)
 		if (mod->xxi[i].nsm == 0)
 			continue;
 
-		fseek(f, start + sdata[i], SEEK_SET);
+		xmp_fseek(f, start + sdata[i], SEEK_SET);
 		load_sample(m, f, 0, &mod->xxs[mod->xxi[i].sub[0].sid], NULL);
 	}
 

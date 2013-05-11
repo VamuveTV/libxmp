@@ -16,7 +16,7 @@
 #define ON  0
 #define OFF 1
 
-static int depack_p18a(FILE *in, FILE *out)
+static int depack_p18a(xmp_file in, xmp_file out)
 {
 	uint8 c3;
 	short pat_max;
@@ -47,7 +47,7 @@ static int depack_p18a(FILE *in, FILE *out)
 	pw_write_zero(out, 20);			/* title */
 
 	/* bypass replaycode routine */
-	fseek(in, 4464, 0);	/* SEEK_SET */
+	xmp_fseek(in, 4464, 0);	/* SEEK_SET */
 
 	ssize = 0;
 	for (i = 0; i < 31; i++) {
@@ -87,16 +87,16 @@ static int depack_p18a(FILE *in, FILE *out)
 
 	pat_max = tmp_ptr - 1;
 
-	fwrite(pnum, 128, 1, out);		/* pattern table */
+	xmp_fwrite(pnum, 128, 1, out);		/* pattern table */
 	write32b(out, PW_MOD_MAGIC);		/* M.K. */
 
 
 	/* a little pre-calc code ... no other way to deal with these unknown
 	 * pattern data sizes ! :(
 	 */
-	fseek(in, 4460, SEEK_SET);
+	xmp_fseek(in, 4460, SEEK_SET);
 	psize = read32b(in);
-	fseek(in, 5226, SEEK_SET);	/* back to pattern data start */
+	xmp_fseek(in, 5226, SEEK_SET);	/* back to pattern data start */
 
 	/* now, reading all pattern data to get the max value of note */
 	refmax = 0;
@@ -110,12 +110,12 @@ static int depack_p18a(FILE *in, FILE *out)
 	refmax += 1;			/* 1st value is 0 ! */
 	i = refmax * 4;			/* each block is 4 bytes long */
 	reftab = (uint8 *) malloc(i);
-	fread(reftab, i, 1, in);
-	fseek(in, 5226, SEEK_SET);	/* back to pattern data start */
+	xmp_fread(reftab, i, 1, in);
+	xmp_fseek(in, 5226, SEEK_SET);	/* back to pattern data start */
 
 	k = 0;
 	for (j = 0; j <= pat_max; j++) {
-		fseek(in, paddr[j] + 5226, 0);
+		xmp_fseek(in, paddr[j] + 5226, 0);
 		for (i = 0; i < 64; i++) {
 			/* VOICE #1 */
 			int x = read16b(in) * 4;
@@ -246,16 +246,16 @@ static int depack_p18a(FILE *in, FILE *out)
 				break;
 			}
 		}
-		fwrite(pat[j], 1024, 1, out);
+		xmp_fwrite(pat[j], 1024, 1, out);
 	}
 
 	/* printf ( "Highest value in pattern data : %d\n" , refmax ); */
 
 	free(reftab);
 
-	fseek(in, 4456, SEEK_SET);
+	xmp_fseek(in, 4456, SEEK_SET);
 	SDAV = read32b(in);
-	fseek(in, 4460 + SDAV, SEEK_SET);
+	xmp_fseek(in, 4460 + SDAV, SEEK_SET);
 
 	/* Now, it's sample data ... though, VERY quickly handled :) */
 	pw_move_data(out, in, ssize);
