@@ -74,20 +74,28 @@ int virt_on(struct context_data *ctx, int num)
 
 	num = p->virt.maxvoc = mixer_numvoices(ctx, num);
 
-	p->virt.voice_array = calloc(p->virt.maxvoc,
-				sizeof(struct mixer_voice));
-	if (p->virt.voice_array == NULL)
-		goto err;
+	if(p->virt.maxvoc > 0) {
+		p->virt.voice_array = calloc(p->virt.maxvoc,
+					sizeof(struct mixer_voice));
+		if (p->virt.voice_array == NULL)
+			goto err;
+	} else {
+		p->virt.voice_array = NULL;
+	}
 
 	for (i = 0; i < p->virt.maxvoc; i++) {
 		p->virt.voice_array[i].chn = FREE;
 		p->virt.voice_array[i].root = FREE;
 	}
 
-	p->virt.virt_channel = malloc(p->virt.virt_channels *
-				sizeof(struct virt_channel));
-	if (p->virt.virt_channel == NULL)
-		goto err1;
+	if(p->virt.virt_channels > 0) {
+		p->virt.virt_channel = malloc(p->virt.virt_channels *
+					sizeof(struct virt_channel));
+		if (p->virt.virt_channel == NULL)
+			goto err1;
+	} else {
+		p->virt.virt_channel = NULL;
+	}
 
 	for (i = 0; i < p->virt.virt_channels; i++) {
 		p->virt.virt_channel[i].map = FREE;
