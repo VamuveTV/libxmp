@@ -14,5 +14,7 @@ TEST(test_write_file_8bit)
 	f = fopen("write_test", "rb");
 	x = read8(f);
 	fail_unless(x == 0x66, "read error");
+
+	fclose(f);
 }
 END_TEST

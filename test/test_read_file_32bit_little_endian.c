@@ -10,5 +10,7 @@ TEST(test_read_file_32bit_little_endian)
 
 	x = read32l(f);
 	fail_unless(x == 0x4352697a, "read error");
+
+	fclose(f);
 }
 END_TEST

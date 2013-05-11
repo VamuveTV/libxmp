@@ -33,5 +33,8 @@ TEST(test_prev_order_start)
 	fail_unless(p->row == 0, "incorrect row");
 	fail_unless(p->frame == 0, "incorrect frame");
 
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

@@ -10,5 +10,7 @@ TEST(test_read_file_16bit_little_endian)
 
 	x = read16l(f);
 	fail_unless(x == 0x0000697a, "read error");
+
+	fclose(f);
 }
 END_TEST

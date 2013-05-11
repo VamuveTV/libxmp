@@ -10,5 +10,7 @@ TEST(test_read_file_24bit_little_endian)
 
 	x = read24l(f);
 	fail_unless(x == 0x0052697a, "read error");
+
+	fclose(f);
 }
 END_TEST

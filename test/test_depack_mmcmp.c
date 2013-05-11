@@ -17,5 +17,9 @@ TEST(test_depack_mmcmp)
 
 	ret = compare_md5(info.md5, "2d8b03b2bce0563dfdf89613c7976fe4");
 	fail_unless(ret == 0, "MD5 error");
+
+	xmp_end_player(c);
+	xmp_release_module(c);
+	xmp_free_context(c);
 }
 END_TEST

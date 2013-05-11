@@ -10,5 +10,7 @@ TEST(test_read_file_8bit)
 
 	x = read8(f);
 	fail_unless(x == 0x0000007a, "read error");
+
+	fclose(f);
 }
 END_TEST

@@ -66,5 +66,9 @@ TEST(test_effect_volslide)
 		fail_unless(info.channel_info[0].volume == vals[i], "volume slide error");
 
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

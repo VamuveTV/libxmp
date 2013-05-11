@@ -28,5 +28,9 @@ TEST(test_api_channel_vol)
 		ret = xmp_channel_vol(ctx, i, -1);
 		fail_unless(ret == i, "channel vol error");
 	}
+
+	xmp_end_player(ctx);
+	xmp_release_module(ctx);
+	xmp_free_context(ctx);
 }
 END_TEST

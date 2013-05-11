@@ -17,5 +17,9 @@ TEST(test_depack_lzx)
 
 	ret = compare_md5(info.md5, "6e4226be5a72fe3770550ced7a2022de");
 	fail_unless(ret == 0, "MD5 error");
+
+	xmp_end_player(c);
+	xmp_release_module(c);
+	xmp_free_context(c);
 }
 END_TEST

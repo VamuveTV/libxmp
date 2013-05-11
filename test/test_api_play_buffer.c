@@ -67,6 +67,7 @@ TEST(test_api_play_buffer)
 	}
 #endif
 
+	free(ref_buffer);
 	xmp_end_player(opaque);
 	xmp_release_module(opaque);
 	xmp_free_context(opaque);

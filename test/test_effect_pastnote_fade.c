@@ -91,5 +91,9 @@ TEST(test_effect_pastnote_fade)
 	fail_unless(vi->ins  ==  0, "not same instrument");
 	fail_unless(vi->vol / 16 == 16, "not fading out");
 	fail_unless(vi->pos0 !=  0, "sample reset");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

@@ -36,5 +36,9 @@ TEST(test_effect_per_toneporta)
 		xmp_get_frame_info(opaque, &info);
 	}
 	fail_unless(PERIOD == 586, "slide error");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

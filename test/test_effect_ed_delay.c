@@ -72,5 +72,9 @@ TEST(test_effect_ed_delay)
 	xmp_play_frame(opaque);
 	fail_unless(vi->note == 61, "row 4 frame 1");
 	fail_unless(vi->pos0 !=  0, "sample position");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

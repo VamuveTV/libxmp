@@ -25,7 +25,11 @@ TEST(test_sample_load_endian)
 					"Invalid conversion from big-endian");
 	}
 
+	free_sample(&xxs);
+
 	/* Now the sample is little-endian */
+	xxs.len = 10;
+	xxs.flg = XMP_SAMPLE_16BIT;
 	load_sample(&m, NULL, SAMPLE_FLAG_NOLOAD, &xxs, conv_r0);
 	if (is_big_endian()) {
 		fail_unless(memcmp(xxs.data, conv_r1, 10) == 0,
@@ -34,5 +38,7 @@ TEST(test_sample_load_endian)
 		fail_unless(memcmp(xxs.data, conv_r0, 10) == 0,
 					"Invalid conversion from little-endian");
 	}
+
+	free_sample(&xxs);
 }
 END_TEST

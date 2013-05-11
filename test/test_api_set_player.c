@@ -118,5 +118,9 @@ TEST(test_api_set_player)
 	fail_unless(ret == 0, "error setting flags");
 	ret = xmp_get_player(opaque, XMP_PLAYER_SMPCTL);
 	fail_unless((ret & XMP_SMPCTL_SKIP) != 0, "skip sample ctl");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

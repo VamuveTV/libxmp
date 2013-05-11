@@ -85,5 +85,9 @@ TEST(test_no_note_invalid_ins_mod)
 	xmp_play_frame(opaque);
 	fail_unless(vi->ins  ==  0, "not original instrument");
 	fail_unless(vi->vol  ==  0 * 16, "volume not zero");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

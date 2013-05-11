@@ -68,6 +68,10 @@ TEST(test_player_note_off_it)
 
 	xmp_play_frame(opaque);
 	fail_unless(vi->vol / 16 == 22, "didn't follow envelope + fadeout");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 	
 END_TEST

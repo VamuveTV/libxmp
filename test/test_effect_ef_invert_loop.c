@@ -24,6 +24,7 @@ TEST(test_effect_ef_invert_loop)
 	m->mod.xxs[0].len = 40;
 	m->mod.xxs[0].lps = 0;
 	m->mod.xxs[0].lpe = 40;
+	free(m->mod.xxs[0].data-4);
 	load_sample(m, f, 0, &m->mod.xxs[0], NULL);
 	fclose(f);
 

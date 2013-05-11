@@ -17,5 +17,9 @@ TEST(test_depack_sqsh)
 
 	ret = compare_md5(info.md5, "70e931a4c9835cd60493ae3d22b0cea621");
 	fail_unless(ret == 0, "MD5 error");
+
+	xmp_end_player(c);
+	xmp_release_module(c);
+	xmp_free_context(c);
 }
 END_TEST

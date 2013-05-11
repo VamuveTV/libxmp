@@ -81,5 +81,9 @@ TEST(test_player_dct_note)
 	fail_unless(vi->chn  == -1, "didn't reset first channel");
 	fail_unless(vi->note ==  0, "didn't reset first channel");
 	fail_unless(vi->vol  ==  0, "didn't reset first channel");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

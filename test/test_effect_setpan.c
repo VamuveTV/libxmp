@@ -56,5 +56,9 @@ TEST(test_effect_setpan)
 		xmp_play_frame(opaque);
 		xmp_play_frame(opaque);
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

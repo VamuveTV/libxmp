@@ -10,5 +10,7 @@ TEST(test_read_file_16bit_big_endian)
 
 	x = read16b(f);
 	fail_unless(x == 0x00007a69, "read error");
+
+	fclose(f);
 }
 END_TEST

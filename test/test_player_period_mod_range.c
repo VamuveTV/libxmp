@@ -112,5 +112,9 @@ TEST(test_player_period_mod_range)
 		xmp_get_frame_info(opaque, &info);
 		fail_unless(PERIOD >= 108, "Bad upper limit");
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

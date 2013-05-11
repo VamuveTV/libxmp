@@ -45,5 +45,9 @@ TEST(test_effect_persistent_vibrato)
 		xmp_get_frame_info(opaque, &info);
 		fail_unless(PERIOD == vals[i], "vibrato error");
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

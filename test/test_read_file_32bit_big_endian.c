@@ -10,5 +10,7 @@ TEST(test_read_file_32bit_big_endian)
 
 	x = read32b(f);
 	fail_unless(x == 0x7a695243, "read error");
+
+	fclose(f);
 }
 END_TEST

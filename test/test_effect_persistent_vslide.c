@@ -65,6 +65,7 @@ TEST(test_effect_persistent_vslide)
 	new_event(ctx, 0, 0, 0, 49, 1, 1, FX_PER_VSLD_UP, 1, 0, 0);
 	new_event(ctx, 0, 2, 0, 0, 0, 0, FX_PER_VSLD_UP, 0, 0, 0);
 
+	xmp_end_player(opaque);
 	xmp_start_player(opaque, 44100, 0);
 
 	for (i = 0; i < 80; i++) {
@@ -107,5 +108,9 @@ TEST(test_effect_persistent_vslide)
 			}
 		}
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

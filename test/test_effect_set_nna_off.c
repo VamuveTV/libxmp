@@ -93,5 +93,8 @@ TEST(test_effect_set_nna_off)
 	fail_unless(vi->vol / 16 == 0, "not following envelope");
 	fail_unless(vi->chn == -1, "didn't reset channel");
 
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

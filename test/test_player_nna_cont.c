@@ -75,5 +75,9 @@ TEST(test_player_nna_cont)
 		fail_unless(vi->ins  ==  0, "first note: not same instrument");
 		fail_unless(vi->vol  == 43 * 16, "first note: not same volume");
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

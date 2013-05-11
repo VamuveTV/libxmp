@@ -411,3 +411,15 @@ int load_sample(struct module_data *m, FILE *f, int flags, struct xmp_sample *xx
 
 	return 0;
 }
+
+void free_sample(struct xmp_sample *xxs)
+{
+	if(xxs->data != NULL) {
+		free(xxs->data - 4);
+		xxs->data = NULL;
+	}
+	xxs->len = 0;
+	xxs->lps = 0;
+	xxs->lpe = 0;
+	xxs->flg = 0;
+}

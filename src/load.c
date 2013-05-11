@@ -27,6 +27,7 @@
 #include "format.h"
 #include "list.h"
 #include "md5.h"
+#include "loaders/loader.h"
 
 
 extern struct format_loader *format_loader[];
@@ -624,8 +625,7 @@ void xmp_release_module(xmp_context opaque)
 	free(mod->xxp);
 	if (mod->smp > 0) {
 		for (i = 0; i < mod->smp; i++) {
-			if (mod->xxs[i].data != NULL)
-				free(mod->xxs[i].data - 4);
+			free_sample(&mod->xxs[i]);
 		}
 		free(mod->xxs);
 	}

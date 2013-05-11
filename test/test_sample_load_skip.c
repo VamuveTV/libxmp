@@ -34,6 +34,7 @@ TEST(test_sample_load_skip)
 	fail_unless(s.data != NULL, "didn't allocate sample data");
 	fail_unless(s.lpe == 101, "didn't fix invalid loop end");
 	fail_unless(memcmp(s.data, buffer, 202) == 0, "sample data error");
+	free_sample(&s);
 
 	/* disable sample load */
 	SET(101, 0, 102, XMP_SAMPLE_16BIT);
@@ -41,5 +42,8 @@ TEST(test_sample_load_skip)
 	m.smpctl |= XMP_SMPCTL_SKIP;
 	load_sample(&m, f, 0, &s, NULL);
 	fail_unless(s.data == NULL, "didn't skip sample load");
+	free_sample(&s);
+
+	fclose(f);
 }
 END_TEST

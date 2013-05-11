@@ -24,6 +24,10 @@ TEST(test_api_restart_module)
 	xmp_get_frame_info(ctx, &info);
 	fail_unless(info.pos == 0, "module restart error");
 	
+	xmp_end_player(ctx);
+	xmp_stop_module(ctx);
+	xmp_release_module(ctx);
+	xmp_free_context(ctx);
 
 }
 END_TEST

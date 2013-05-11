@@ -89,5 +89,9 @@ TEST(test_no_note_valid_ins_ft2)
 	fail_unless(vi->note == 59, "not same note");
 	fail_unless(vi->vol  == 22 * 16, "not old volume");
 	fail_unless(vi->pos0 !=  0, "sample reset");
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

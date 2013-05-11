@@ -112,5 +112,9 @@ TEST(test_effect_it_vcol_g)
 	
 		fail_unless(PERIOD == vals[i], "portamento error");
 	}
+
+	xmp_end_player(opaque);
+	xmp_release_module(opaque);
+	xmp_free_context(opaque);
 }
 END_TEST

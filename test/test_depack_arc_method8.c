@@ -17,5 +17,9 @@ TEST(test_depack_arc_method8)
 
 	ret = compare_md5(info.md5, "64d67d1d5d123c6542a8099255ad8ca2");
 	fail_unless(ret == 0, "MD5 error");
+
+	xmp_end_player(c);
+	xmp_release_module(c);
+	xmp_free_context(c);
 }
 END_TEST
