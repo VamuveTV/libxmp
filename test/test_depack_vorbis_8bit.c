@@ -19,7 +19,10 @@ TEST(test_depack_vorbis_8bit)
 	xmp_start_player(c, 44100, 0);
 	xmp_get_module_info(c, &info);
 
+	fail_unless(info.mod->xxs[4].len == 5492, "decompressed data has unexpected size");
+
 	stat("data/sample4.raw", &st);
+	fail_unless(st.st_size == 5492, "raw data has unexpected size");
 	f = fopen("data/sample4.raw", "rb");
 	fail_unless(f != NULL, "can't open raw data file");
 
@@ -27,14 +30,18 @@ TEST(test_depack_vorbis_8bit)
 	fail_unless(buf != NULL, "can't alloc raw buffer");
 	fread(buf, 1, st.st_size, f);
 
-	pcm8 = (int8 *)info.mod->xxs[0].data;
+	pcm8 = (int8 *)info.mod->xxs[4].data;
 
 	for (i = 0; i < 5492; i++) {
 		if (pcm8[i] != buf[i])
-			fail_unless(abs(pcm8[i] - buf[i]) >= 1, "data error");
+			fail_unless(abs(pcm8[i] - buf[i]) <= 1, "data error");
 	}
 
+	free(buf);
 	fclose(f);
 
+	xmp_end_player(c);
+	xmp_release_module(c);
+	xmp_free_context(c);
 }
 END_TEST
