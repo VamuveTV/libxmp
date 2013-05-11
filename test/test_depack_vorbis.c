@@ -19,7 +19,12 @@ TEST(test_depack_vorbis)
 	xmp_start_player(c, 44100, 0);
 	xmp_get_module_info(c, &info);
 
+	//for(i=0; i<)
+
+	fail_unless(info.mod->xxs[0].len == 9376, "decompressed data has unexpected size");
+
 	stat("data/beep.raw", &st);
+	fail_unless(st.st_size == 2*9376, "raw data has unexpected size");
 	f = fopen("data/beep.raw", "rb");
 	fail_unless(f != NULL, "can't open raw data file");
 
@@ -31,10 +36,14 @@ TEST(test_depack_vorbis)
 
 	for (i = 0; i < 9376; i++) {
 		if (pcm16[i] != buf[i])
-			fail_unless(abs(pcm16[i] - buf[i]) >= 1, "data error");
+			fail_unless(abs(pcm16[i] - buf[i]) <= 1, "data error");
 	}
 
+	free(buf);
 	fclose(f);
 
+	xmp_end_player(c);
+	xmp_release_module(c);
+	xmp_free_context(c);
 }
 END_TEST
