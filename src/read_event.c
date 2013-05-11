@@ -41,14 +41,16 @@ static struct xmp_subinstrument *get_subinstrument(struct context_data *ctx,
 static void reset_envelopes(struct xmp_module *mod, struct channel_data *xc)
 {
 	/* Reset envelope positions */
-	if (~mod->xxi[xc->ins].aei.flg & XMP_ENVELOPE_CARRY) {
-		xc->v_idx = 0;
-	}
-	if (~mod->xxi[xc->ins].pei.flg & XMP_ENVELOPE_CARRY) {
-		xc->p_idx = 0;
-	}
-	if (~mod->xxi[xc->ins].fei.flg & XMP_ENVELOPE_CARRY) {
-		xc->f_idx = 0;
+	if(xc->ins >= 0) {
+		if (~mod->xxi[xc->ins].aei.flg & XMP_ENVELOPE_CARRY) {
+			xc->v_idx = 0;
+		}
+		if (~mod->xxi[xc->ins].pei.flg & XMP_ENVELOPE_CARRY) {
+			xc->p_idx = 0;
+		}
+		if (~mod->xxi[xc->ins].fei.flg & XMP_ENVELOPE_CARRY) {
+			xc->f_idx = 0;
+		}
 	}
 }
 
